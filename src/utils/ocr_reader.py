@@ -36,14 +36,25 @@ class OCRReader:
             
         return "\n".join(context_lines)
 
-    def find_element(self, image_np: np.ndarray, target_text: str):
+    def find_largest_element(self, image_np: np.ndarray, target_text: str):
         """
-        模糊匹配特定文字并返回坐标。
+        寻找所有匹配项中面积最大的那个（通常是 Logo 或主标题）。
         """
         results = self.reader.readtext(image_np)
+        best_match = None
+        max_area = 0
+        
         for (bbox, text, prob) in results:
             if target_text.lower() in text.lower():
-                center_x = int(np.mean([p[0] for p in bbox]))
-                center_y = int(np.mean([p[1] for p in bbox]))
-                return (center_x, center_y)
-        return None
+                # 计算矩形面积
+                width = bbox[2][0] - bbox[0][0]
+                height = bbox[2][1] - bbox[0][1]
+                area = width * height
+                
+                if area > max_area:
+                    max_area = area
+                    center_x = int(np.mean([p[0] for p in bbox]))
+                    center_y = int(np.mean([p[1] for p in bbox]))
+                    best_match = (center_x, center_y)
+                    
+        return best_match

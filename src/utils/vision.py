@@ -22,25 +22,27 @@ class VisionCapture:
 
     def capture_screen(self, region: Optional[Dict[str, int]] = None) -> str:
         """
-        截取屏幕并保存为临时图，返回路径。
+        截取屏幕或特定区域并保存。区域格式: {'top': x, 'left': y, 'width': w, 'height': h}
         强制使用 D:\Dev\autoplay\temp 绝对路径。
         """
         import os
         import time
+        from PIL import Image
         
-        # 强制 D 盘绝对路径
         temp_dir = r"D:\Dev\autoplay\temp"
-        if not os.path.exists(temp_dir):
-            os.makedirs(temp_dir, exist_ok=True)
+        os.makedirs(temp_dir, exist_ok=True)
             
         img_filename = f"capture_{int(time.time())}.jpg"
         img_path = os.path.join(temp_dir, img_filename)
         
-        # 截取全屏
-        sct_img = self.sct.grab(self.sct.monitors[1])
+        # 截取逻辑
+        if region:
+            # 针对高分屏优化的区域截取
+            sct_img = self.sct.grab(region)
+        else:
+            sct_img = self.sct.grab(self.sct.monitors[1])
+            
         img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-        
-        # 保存
         img.save(img_path, quality=85)
         return img_path
 

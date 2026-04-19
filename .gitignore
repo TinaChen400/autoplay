@@ -10,8 +10,10 @@ ENV/
 # Project Specific
 temp/
 records/*.png
+records/*.jpg
 calibration_db.json
 config/calibration_db.json
+scratch/
 
 # IDE
 .vscode/
