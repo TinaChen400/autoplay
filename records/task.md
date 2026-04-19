@@ -1,0 +1,27 @@
+# Task List - Remote Desktop Visual AI Agent
+
+- [x] **Phase 1: Infrastructure**
+    - [x] Create directory structure
+    - [x] Create `requirements.txt`
+    - [x] Create `config/default_config.json`
+    - [x] Initialize local `.venv` (Python 3.10+)
+- [x] **Phase 2: Core Utilities**
+    - [x] Implement `src/utils/vision.py` (Screen capture)
+    - [x] Implement `src/utils/window_lock.py` (Remote window alignment)
+- [x] **Phase 3: PyQt6 Transparent Overlay**
+    - [x] Implement `src/overlay/overlay_window.py` (Transparent, click-through)
+    - [x] Implement `src/overlay/ar_renderer.py` (AR drawing logic - integrated in overlay)
+    - [x] Implement `src/overlay/ui_panels.py` (Task/Approval panels)
+- [x] **Phase 4: AI Engine**
+    - [x] Implement `src/ai/local_engine.py` (Mock/Fallback integrated)
+    - [x] Implement `src/ai/cloud_engine.py` (Doubao API Wrapper integrated)
+    - [x] Implement `src/ai/model_manager.py` (Switching logic)
+- [x] **Phase 5: Execution & State Machine**
+    - [x] Implement `src/execution/ahk_executor.py` (AHK calls)
+    - [x] Implement `src/execution/task_machine.py` (Task queue & loop)
+- [x] **Phase 6: Logging & Monitoring**
+    - [x] Implement `src/monitor/logger.py`
+    - [ ] Implement `src/monitor/debugger.py` (Integrated in panels)
+- [x] **Phase 7: Integration & Entry**
+    - [x] Finalize `main.py`
+    - [x] Build completion record v2

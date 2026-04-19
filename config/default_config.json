@@ -1,0 +1,29 @@
+{
+    "project": {
+        "name": "Remote Desktop Visual AI Agent",
+        "version": "1.0.0",
+        "author": "Antigravity Agent"
+    },
+    "window": {
+        "remote_title_keywords": ["向日葵", "Sunlogin", "Google Remote Desktop", "Chrome", "MSI", "远程桌面"],
+        "sync_fps": 10
+    },
+    "ai": {
+        "use_ollama": true,
+        "model_name": "llama3.1:8b",
+        "yolo_model_path": "models/yolov8n.pt",
+        "prefer_model": "local",
+        "cloud_api_timeout": 500,
+        "accuracy_threshold": 0.88
+    },
+    "execution": {
+        "default_delay": 100,
+        "anti_shake_ms": 500,
+        "ahk_path": "C:\\Program Files\\AutoHotkey\\AutoHotkey.exe"
+    },
+    "logs": {
+        "level": "DEBUG",
+        "log_to_file": true,
+        "log_path": "logs/"
+    }
+}

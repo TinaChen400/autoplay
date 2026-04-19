@@ -1,0 +1,16 @@
+[2026-04-19 18:48:12] [ERROR] CRITICAL CRASH in _async_ai_analysis: name 'Enter' is not defined
+[2026-04-19 18:51:33] [ERROR] CRITICAL CRASH in _async_ai_analysis: name 'Enter' is not defined
+[2026-04-19 18:51:54] [ERROR] CRITICAL CRASH in _async_ai_analysis: name 'Enter' is not defined
+[2026-04-19 18:51:58] [ERROR] CRITICAL CRASH in _async_ai_analysis: name 'Enter' is not defined
+[2026-04-19 18:52:49] [ERROR] CRITICAL CRASH in _async_ai_analysis: name 'Enter' is not defined
+[2026-04-19 18:53:08] [ERROR] CRITICAL: 未能在系统中找到 AutoHotkey.exe 驱动！请检查是否安装。
+[2026-04-19 18:54:28] [ERROR] CRITICAL: 未能在系统中找到 AutoHotkey.exe 驱动！请检查是否安装。
+[2026-04-19 18:55:12] [ERROR] CRITICAL: 未能在系统中找到 AutoHotkey.exe 驱动！请检查是否安装。
+[2026-04-19 18:55:35] [ERROR] 未找到 AHK 程序 at C:\Program Files\AutoHotkey\AutoHotkey.exe，物理物理模拟已失效！
+[2026-04-19 18:56:53] [ERROR] 未找到 AHK 程序 at C:\Program Files\AutoHotkey\AutoHotkey.exe，物理物理模拟已失效！
+[2026-04-19 18:56:53] [ERROR] 未找到 AHK 程序 at C:\Program Files\AutoHotkey\AutoHotkey.exe，物理物理模拟已失效！
+[2026-04-19 18:56:54] [ERROR] 未找到 AHK 程序 at C:\Program Files\AutoHotkey\AutoHotkey.exe，物理物理模拟已失效！
+[2026-04-19 18:56:55] [ERROR] 未找到 AHK 程序 at C:\Program Files\AutoHotkey\AutoHotkey.exe，物理物理模拟已失效！
+[2026-04-19 18:56:56] [ERROR] 未找到 AHK 程序 at C:\Program Files\AutoHotkey\AutoHotkey.exe，物理物理模拟已失效！
+[2026-04-19 18:59:09] [ERROR] 执行过程异常: 'PyExecutor' object has no attribute 'clear_page'
+[2026-04-19 19:10:42] [ERROR] 执行过程异常: 'str' object has no attribute 'group'

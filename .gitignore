@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+
+# Project Specific
+temp/
+records/*.png
+calibration_db.json
+config/calibration_db.json
+
+# IDE
+.vscode/
+.idea/
+.gemini/

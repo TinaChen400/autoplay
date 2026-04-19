@@ -1,0 +1,12 @@
+PyQt6
+mss
+pygetwindow
+ultralytics
+llama-cpp-python
+opencv-python
+numpy
+python-dotenv
+pyautogui
+pywin32
+ahk
+requests
