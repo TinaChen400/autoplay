@@ -12,6 +12,9 @@ from src.utils.ocr_reader import OCRReader
 from src.execution.remote_agent import RemoteAgent
 
 class MSISkills:
+    """
+    MSI 原子技能积木库 (V14 Lego Edition)
+    """
     def __init__(self):
         self.agent = RemoteAgent(profile_name="MSI")
         self.vc = VisionCapture()
@@ -27,65 +30,65 @@ class MSISkills:
             except: pass
         return None
 
-    def capture_standard_view(self):
-        """线程安全的单次抓拍"""
+    def action_screenshot(self, label="view"):
+        """原子积木：拍摄物理对位快照"""
         config = self._load_config()
         dock_rect = None
         if config:
             raw = config.get("dock_rect")
             dock_rect = {"left": raw["x"], "top": raw["y"], "width": raw["width"], "height": raw["height"]}
         
-        # 每次调用都创建独立的 mss 实例，彻底规避线程属性错误
         with mss.mss() as sct:
             screenshot = sct.grab(dock_rect) if dock_rect else sct.grab(sct.monitors[1])
-            save_path = os.path.join(self.records_dir, "skill_msi_last_view.jpg")
+            save_path = os.path.join(self.records_dir, f"snap_{label}.jpg")
             mss.tools.to_png(screenshot.rgb, screenshot.size, output=save_path)
+            print(f"[SKILL] 快照保存: {save_path}")
             return save_path
 
-    def find_thumbnail_rect(self, anchor_x, anchor_y, img):
-        h, w, _ = img.shape
-        roi_top, roi_bottom = anchor_y, min(anchor_y + 300, h)
-        roi_left, roi_right = max(anchor_x - 100, 0), min(anchor_x + 300, w)
-        
-        roi_img = img[roi_top:roi_bottom, roi_left:roi_right]
-        gray = cv2.cvtColor(roi_img, cv2.COLOR_BGR2GRAY)
-        blurred = cv2.GaussianBlur(gray, (3, 3), 0)
-        thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-        for cnt in contours:
-            rx, ry, rw, rh = cv2.boundingRect(cnt)
-            if 50 < rw < 200 and 50 < rh < 200:
-                return rx + roi_left + rw // 2, ry + roi_top + rh // 2
-        return None, None
-
-    def click_input_thumbnail(self):
-        print("\n--- 执行技能: click_input_thumbnail ---")
-        view_path = self.capture_standard_view()
+    def action_click_landmark(self, keywords=["input"]):
+        """原子积木：地标识别点击 (V7 寻锚)"""
+        print(f"\n[SKILL] 寻找地标点击: {keywords}")
+        view_path = self.action_screenshot("landmark_search")
         img = cv2.imread(view_path)
         context = self.ocr.read_screen(img)
-        anchor_x, anchor_y = -1, -1
-        keywords = ["inputs", "input", "source", "output"]
         
+        ax, ay = -1, -1
         for line in context.split('\n'):
-            if any(k in line.lower() for k in keywords):
+            if any(k.lower() in line.lower() for k in keywords):
                 try:
                     parts = line.split("坐标: (")[1].split(")")[0].split(",")
-                    anchor_x, anchor_y = int(parts[0]), int(parts[1])
+                    ax, ay = int(parts[0]), int(parts[1])
                     break
                 except: continue
         
-        if anchor_y == -1: return False
-        target_x, target_y = self.find_thumbnail_rect(anchor_x, anchor_y, img)
+        if ay == -1: return False
+
+        # 视觉边缘微调
+        tx, ty = self._find_thumbnail_center(ax, ay, img)
         config = self._load_config()
-        if not config: return False
-        
-        base_x, base_y = config['dock_rect']['x'], config['dock_rect']['y']
-        tx, ty = (base_x + target_x, base_y + target_y) if target_x else (base_x + anchor_x, base_y + anchor_y + 120)
+        if not (config and tx):
+            # 降级：仅使用文本偏移
+            tx, ty = config['dock_rect']['x'] + ax, config['dock_rect']['y'] + ay + 120
+        else:
+            tx, ty = config['dock_rect']['x'] + tx, config['dock_rect']['y'] + ty
+
         self.agent.click_at(tx, ty)
         return True
 
-    def wait_for_visual_change(self, timeout=10, threshold=15.0):
+    def _find_thumbnail_center(self, ax, ay, img):
+        h, w, _ = img.shape
+        roi = img[ay:min(ay+300, h), max(ax-100, 0):min(ax+300, w)]
+        gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        thresh = cv2.adaptiveThreshold(cv2.GaussianBlur(gray, (3,3), 0), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for cnt in contours:
+            rx, ry, rw, rh = cv2.boundingRect(cnt)
+            if 50 < rw < 200 and 50 < rh < 200:
+                return rx + max(ax-100, 0) + rw // 2, ry + ay + rh // 2
+        return None, None
+
+    def action_wait_visual(self, threshold=15.0, timeout=10):
+        """原子积木：视觉变化等待"""
         config = self._load_config()
         if not config: return False
         raw = config["dock_rect"]
@@ -106,17 +109,15 @@ class MSISkills:
                 time.sleep(0.5)
         return False
 
-    def interact_with_large_image(self):
-        if not self.wait_for_visual_change(): return False
+    def action_press_keys(self, keys=["down"]):
+        """原子积木：按键序列注入"""
+        print(f"[SKILL] 注入按键: {keys}")
+        # 激活中心焦点
         config = self._load_config()
-        if not config: return False
-        data = config['dock_rect']
-        cx, cy = data['x'] + data['width'] // 2, data['y'] + data['height'] // 2
-        self.agent.double_click_at(cx, cy) 
-        time.sleep(1.0)
-        self.agent.press_key_sequence(['down', 'right', 'left', 'up'], interval=0.5, hold_time=0.15)
+        if config:
+            data = config['dock_rect']
+            cx, cy = data['x'] + data['width'] // 2, data['y'] + data['height'] // 2
+            self.agent.double_click_at(cx, cy)
+            time.sleep(0.5)
+        self.agent.press_key_sequence(keys, interval=0.5, hold_time=0.15)
         return True
-
-if __name__ == "__main__":
-    skills = MSISkills()
-    if not skills.click_input_thumbnail(): skills.interact_with_large_image()

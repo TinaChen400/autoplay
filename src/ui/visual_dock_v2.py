@@ -68,16 +68,14 @@ class VisualDockV2(QWidget):
         self.panel.setStyleSheet("background-color: rgba(15, 15, 20, 250); border-left: 2px solid #00ff7f;")
         p_layout = QVBoxLayout(self.panel); p_layout.setContentsMargins(15, 20, 15, 15)
         
-        title = QLabel("MISSION HUB V13"); title.setStyleSheet("color: #00ff7f; font-weight: bold; font-size: 16px; margin-bottom: 20px;")
-        p_layout.addWidget(title)
+        self.title_lbl = QLabel("MISSION HUD V14"); self.title_lbl.setStyleSheet("color: #00ff7f; font-weight: bold; font-size: 16px; margin-bottom: 20px;")
+        p_layout.addWidget(self.title_lbl)
         
-        self.cards = []
-        steps = [("1. 识别并点击小图", "地标定位 + 图片对位"), ("2. 等待大图弹出", "画面增量监测"), ("3. 注入方向键序列", "物理拟真注入")]
-        for i, (n, d) in enumerate(steps):
-            c = FlowStepCard(n, d, i); p_layout.addWidget(c); self.cards.append(c)
-            
+        self.card_layout = QVBoxLayout()
+        p_layout.addLayout(self.card_layout)
         p_layout.addStretch()
-        self.lbl_status = QLabel("Mode: Scanning..."); self.lbl_status.setStyleSheet("color: #888; font-size: 10px;")
+        
+        self.lbl_status = QLabel("Mode: Init..."); self.lbl_status.setStyleSheet("color: #888; font-size: 10px;")
         p_layout.addWidget(self.lbl_status)
         
         btn_quit = QPushButton("QUIT MISSION (ESC)"); btn_quit.setStyleSheet("background: #522; color: #fcc; padding: 10px; border-radius: 4px;")
@@ -88,10 +86,22 @@ class VisualDockV2(QWidget):
         try:
             from src.execution.task_bridge import TaskBridge
             self.bridge = TaskBridge()
-            self.lbl_status.setText("Brain: Connected")
-            for i, card in enumerate(self.cards):
-                card.mousePressEvent = lambda e, idx=i: self.bridge.run_step(idx, self.refresh)
-        except: self.lbl_status.setText("Brain: Connect Failed")
+            self.lbl_status.setText(f"Brain: {self.bridge.steps[0].name if self.bridge.steps else 'Ready'}")
+            self.rebuild_cards()
+        except: self.lbl_status.setText("Brain: Error")
+
+    def rebuild_cards(self):
+        # 清除旧卡片
+        while self.card_layout.count():
+            item = self.card_layout.takeAt(0)
+            if item.widget(): item.widget().deleteLater()
+        
+        self.cards = []
+        for i, step in enumerate(self.bridge.steps):
+            c = FlowStepCard(step.name, step.description, i)
+            c.mousePressEvent = lambda e, idx=i: self.bridge.run_step(idx, self.refresh)
+            self.card_layout.addWidget(c)
+            self.cards.append(c)
 
     def refresh(self):
         if self.bridge:

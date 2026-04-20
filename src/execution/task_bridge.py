@@ -1,35 +1,50 @@
 import sys
 import threading
+import json
+import os
 from typing import Callable, List, Dict
 
-# 加入项目根目录
 sys.path.append(r"D:/Dev/autoplay")
 from src.tasks.msi_skills import MSISkills
 
 class TaskStep:
-    def __init__(self, name: str, func: Callable, description: str):
+    def __init__(self, name: str, methodName: str, params: dict, description: str):
         self.name = name
-        self.func = func
+        self.methodName = methodName
+        self.params = params
         self.description = description
         self.status = "idle" # idle, running, success, failed
 
 class TaskBridge:
     """
-    任务桥接引擎：将 MSI 自动化脚本拆解为可单步执行的任务链。
+    V14 积木化任务驱动引擎：动态解析 JSON 蓝图并调度原子技能。
     """
     def __init__(self):
         self.skills = MSISkills()
-        self.steps: List[TaskStep] = [
-            TaskStep("1. 识别并点击小图", self.skills.click_input_thumbnail, "定位 SOURCE 文字并在下方区域对位缩略图并点击"),
-            TaskStep("2. 等待大图弹出", self.skills.wait_for_visual_change, "实时计算画面像素增量，检测弹窗出现"),
-            TaskStep("3. 注入方向键序列", self.skills.interact_with_large_image, "穿透式注入物理按键 (下右左上)"),
+        self.config_path = r"D:/Dev/autoplay/config/missions.json"
+        self.steps: List[TaskStep] = []
+        self.load_mission()
+
+    def load_mission(self, mission_name: str = None):
+        """从 JSON 加载积木流"""
+        if not os.path.exists(self.config_path):
+            return
+        
+        with open(self.config_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            
+        target = mission_name or data.get("current_mission")
+        raw_steps = data.get("missions", {}).get(target, [])
+        
+        self.steps = [
+            TaskStep(s["name"], s["action"], s.get("params", {}), s.get("description", ""))
+            for s in raw_steps
         ]
-        self.current_index = 0
+        print(f"[BRIDGE] 成功加载积木流: {target} ({len(self.steps)} 块)")
 
     def run_step(self, index: int, callback: Callable = None):
-        """异步执行指定步骤"""
-        if index < 0 or index >= len(self.steps):
-            return
+        """执行单块积木"""
+        if index < 0 or index >= len(self.steps): return
 
         step = self.steps[index]
         step.status = "running"
@@ -37,11 +52,12 @@ class TaskBridge:
 
         def _worker():
             try:
-                # 执行具体技能
-                result = step.func()
+                # 动态反射执行原子技能
+                method = getattr(self.skills, step.methodName)
+                result = method(**step.params)
                 step.status = "success" if result is not False else "failed"
             except Exception as e:
-                print(f"[BRIDGE] Error in {step.name}: {e}")
+                print(f"[BRIDGE] 积木执行异常 {step.name}: {e}")
                 step.status = "failed"
             
             if callback: callback()
@@ -49,6 +65,4 @@ class TaskBridge:
         threading.Thread(target=_worker, daemon=True).start()
 
     def reset(self):
-        for step in self.steps:
-            step.status = "idle"
-        self.current_index = 0
+        for s in self.steps: s.status = "idle"

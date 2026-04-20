@@ -1,0 +1,31 @@
+{
+  "current_mission": "图片打分任务",
+  "missions": {
+    "图片打分任务": [
+      {
+        "name": "1. 识别并点击小图",
+        "action": "action_click_landmark",
+        "params": {"keywords": ["inputs", "input", "source"]},
+        "description": "寻找 Inputs 文字并定位下方图片中心"
+      },
+      {
+        "name": "2. 等待大图弹出",
+        "action": "action_wait_visual",
+        "params": {"threshold": 15, "timeout": 10},
+        "description": "监控页面增量变化，确认大图加载"
+      },
+      {
+        "name": "3. 注入方向键序列",
+        "action": "action_press_keys",
+        "params": {"keys": ["down", "right", "left", "up"]},
+        "description": "物理穿透注入按键流，遍历所有对比图"
+      },
+      {
+        "name": "4. 最终截图存档",
+        "action": "action_screenshot",
+        "params": {"label": "result_final"},
+        "description": "保存当前屏幕状态作为任务成果"
+      }
+    ]
+  }
+}
