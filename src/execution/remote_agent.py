@@ -119,6 +119,25 @@ class RemoteAgent:
             pydirectinput.press('space')
             time.sleep(0.3)
 
+    def activate_window(self, keyword: str):
+        """将包含 keyword 的窗口置于前台，确保按键能被捕获"""
+        def cb(hwnd, ctx):
+            title = win32gui.GetWindowText(hwnd).lower()
+            if keyword and keyword.lower() in title and win32gui.IsWindowVisible(hwnd):
+                ctx.append(hwnd)
+            return True
+        found = []
+        win32gui.EnumWindows(cb, found)
+        if found:
+            try:
+                win32gui.SetForegroundWindow(found[0])
+                time.sleep(0.3)
+                print(f"[AGENT] Window activated: {win32gui.GetWindowText(found[0])}")
+            except Exception as e:
+                print(f"[AGENT] activate_window failed: {e}")
+        else:
+            print(f"[AGENT] No window found for keyword: '{keyword}'")
+
     def press_key_sequence(self, keys: list, interval=0.5, hold_time=0.2):
         """执行硬件级按键序列（V6 穿透增强版）"""
         # 预先激活窗口

@@ -112,7 +112,6 @@ class MSISkills:
     def action_press_keys(self, keys=["down"]):
         """原子积木：按键序列注入"""
         print(f"[SKILL] 注入按键: {keys}")
-        # 激活中心焦点
         config = self._load_config()
         if config:
             data = config['dock_rect']
@@ -120,4 +119,81 @@ class MSISkills:
             self.agent.double_click_at(cx, cy)
             time.sleep(0.5)
         self.agent.press_key_sequence(keys, interval=0.5, hold_time=0.15)
+        return True
+
+    def action_zoom_pan_reset(self, landmark_keywords=["ref"], scroll_amount=3,
+                               pan_dx=80, pan_dy=40, reset_by_double_click=True):
+        """
+        原子积木：在 Ref 区域执行 Zoom In -> PAN -> 双击还原 的完整交互序列。
+        1. 视觉寻锚 Ref1/Ref 地标并点击
+        2. 鼠标滚轮 Zoom In
+        3. 按住左键拖拽 PAN
+        4. 双击还原原始视图
+        """
+        import pydirectinput
+        import win32api
+        import win32con
+
+        print(f"\n[SKILL] 执行 Zoom/Pan/Reset 序列: 地标={landmark_keywords}")
+
+        # --- Step 1: 找到 Ref 图片位置 ---
+        view_path = self.action_screenshot("ref_search")
+        img = cv2.imread(view_path)
+        context = self.ocr.read_screen(img)
+
+        ax, ay = -1, -1
+        for line in context.split('\n'):
+            if any(k.lower() in line.lower() for k in landmark_keywords):
+                try:
+                    parts = line.split("坐标: (")[1].split(")")[0].split(",")
+                    ax, ay = int(parts[0]), int(parts[1])
+                    print(f"[SKILL] Ref 地标定位: ({ax}, {ay})")
+                    break
+                except: continue
+
+        if ay == -1:
+            print("[SKILL] 未找到 Ref 地标，操作终止。")
+            return False
+
+        config = self._load_config()
+        if not config: return False
+        base_x = config['dock_rect']['x']
+        base_y = config['dock_rect']['y']
+
+        # 转换为物理绝对坐标
+        target_x = base_x + ax
+        target_y = base_y + ay + 60  # 偏移到图片区域（标题下方）
+
+        # --- Step 2: 单击聚焦到 Ref 图 ---
+        print(f"[SKILL] 点击 Ref 图位置: ({target_x}, {target_y})")
+        self.agent.click_at(target_x, target_y)
+        time.sleep(0.5)
+
+        # --- Step 3: 鼠标滚轮 Zoom In ---
+        print(f"[SKILL] 滚轮 Zoom In x{scroll_amount}")
+        pydirectinput.moveTo(target_x, target_y)
+        for _ in range(scroll_amount):
+            win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, 120, 0)
+            time.sleep(0.15)
+        time.sleep(0.5)
+
+        # --- Step 4: 按住左键拖拽 PAN ---
+        print(f"[SKILL] PAN 拖拽: dx={pan_dx}, dy={pan_dy}")
+        pydirectinput.mouseDown(button='left')
+        time.sleep(0.1)
+        # 分步拖拽，模拟真实手势
+        steps = 10
+        for i in range(steps):
+            pydirectinput.moveRel(pan_dx // steps, pan_dy // steps)
+            time.sleep(0.03)
+        pydirectinput.mouseUp(button='left')
+        time.sleep(0.5)
+
+        # --- Step 5: 双击还原视图 ---
+        if reset_by_double_click:
+            print("[SKILL] 双击还原原始视图")
+            pydirectinput.doubleClick(target_x, target_y)
+            time.sleep(0.3)
+
+        print("[SKILL] Zoom/Pan/Reset 完成。")
         return True

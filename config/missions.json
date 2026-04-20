@@ -21,7 +21,19 @@
         "description": "物理穿透注入按键流，遍历所有对比图"
       },
       {
-        "name": "4. 最终截图存档",
+        "name": "4. Ref1 放大 / PAN / 还原",
+        "action": "action_zoom_pan_reset",
+        "params": {
+          "landmark_keywords": ["ref1", "ref", "response"],
+          "scroll_amount": 3,
+          "pan_dx": 80,
+          "pan_dy": 40,
+          "reset_by_double_click": true
+        },
+        "description": "点击 Ref1 大图 → 滚轮放大 → 拖拽 PAN → 双击还原"
+      },
+      {
+        "name": "5. 最终截图存档",
         "action": "action_screenshot",
         "params": {"label": "result_final"},
         "description": "保存当前屏幕状态作为任务成果"
