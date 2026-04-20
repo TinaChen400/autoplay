@@ -12,20 +12,31 @@ import cv2
 sys.path.append(r"D:\Dev\autoplay")
 from src.utils.vision import VisionCapture
 
+from src.execution.ahk_executor import AHKExecutor
+
 class RemoteAgent:
-    """
-    自适应远程桌面 Agent 核心库。
-    具备多环境记忆能力 (Profiles) 与物理级交互接口。
-    """
     def __init__(self, profile_name="default"):
         self.profile_name = profile_name
         self.config_dir = r"D:\Dev\autoplay\config"
         self.profiles_path = os.path.join(self.config_dir, "profiles.json")
         self.vc = VisionCapture()
-        self.current_profile = {}
+        self.profiles = {}
+        
+        # 初始化 AHK 执行器作为穿透备选 (优先检查 64 位路径)
+        ahk_exe = r"C:\Program Files\AutoHotkey\AutoHotkey.exe"
+        if not os.path.exists(ahk_exe):
+            ahk_exe = r"C:\Program Files (x86)\AutoHotkey\AutoHotkey.exe"
+        self.ahk = AHKExecutor(ahk_path=ahk_exe)
         
         os.makedirs(self.config_dir, exist_ok=True)
         self.load_profiles()
+
+    def press_key_via_ahk(self, key_name: str):
+        """利用 AHK 的底层驱动能力发送按键"""
+        # AHK 的方向键格式为 {Up}, {Down} 等
+        ahk_key = f"{{{key_name.capitalize()}}}"
+        print(f"ACTION: Forcefully sending '{ahk_key}' via AHK...")
+        self.ahk.execute_shortcut(ahk_key)
 
     def load_profiles(self):
         """从磁盘加载所有电脑的记忆"""
@@ -70,6 +81,12 @@ class RemoteAgent:
         pydirectinput.click(int(x), int(y))
         time.sleep(0.1)
 
+    def double_click_at(self, x, y):
+        """执行硬件级物理双击"""
+        print(f"ACTION: Hardware-double-clicking at physical {x}, {y}")
+        pydirectinput.doubleClick(int(x), int(y))
+        time.sleep(0.1)
+
     def type_at(self, text, machine_id="oliver"):
         """针对该电脑的地标进行精准录入"""
         p = self.profiles.get(machine_id)
@@ -101,6 +118,18 @@ class RemoteAgent:
         for _ in range(times):
             pydirectinput.press('space')
             time.sleep(0.3)
+
+    def press_key_sequence(self, keys: list, interval=0.5, hold_time=0.2):
+        """执行硬件级按键序列（V6 穿透增强版）"""
+        # 预先激活窗口
+        self.activate_window(self.profile_name)
+        
+        print(f"ACTION: Executing forceful key sequence: {keys} (Hold: {hold_time}s)")
+        for key in keys:
+            pydirectinput.keyDown(key)
+            time.sleep(hold_time) 
+            pydirectinput.keyUp(key)
+            time.sleep(interval)
 
 if __name__ == "__main__":
     # 演示：一键初始化并执行

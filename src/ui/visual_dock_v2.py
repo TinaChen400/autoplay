@@ -1,253 +1,175 @@
 import sys
 import os
-import json
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel
-from PyQt6.QtCore import Qt, QTimer, QRect, QPoint
-from PyQt6.QtGui import QColor, QPen, QPainter, QFont
-import pygetwindow as gw
+import io
+import time
+import traceback
 import win32gui
-import win32con
 import win32api
+from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
+                             QLabel, QFrame, QPushButton, QSpacerItem, QSizePolicy)
+from PyQt6.QtCore import Qt, QTimer, QRect, QPoint, pyqtSignal
+from PyQt6.QtGui import QColor, QPen, QPainter, QFont, QLinearGradient
 import ctypes
 
-# 强力开启物理像素感知 (解决高 DPI 缩放截屏不全问题)
+# 强制开启物理像素感知
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(1) 
 except:
     ctypes.windll.user32.SetProcessDPIAware()
 
-# Project paths
 sys.path.append(r"D:\Dev\autoplay")
-from src.execution.remote_agent import RemoteAgent
+from src.utils.window_lock import WindowManager
+
+class FlowStepCard(QFrame):
+    def __init__(self, name, desc, index, parent=None):
+        super().__init__(parent)
+        self.name = name; self.status = "idle"
+        self.setMinimumHeight(60)
+        self.setObjectName("StepCard")
+        self.setStyleSheet("#StepCard { background-color: rgba(35, 35, 40, 200); border: 1px solid rgba(255, 255, 255, 20); border-radius: 6px; }")
+        
+        v_layout = QVBoxLayout(self); v_layout.setContentsMargins(10,5,10,5)
+        h_layout = QHBoxLayout()
+        title = QLabel(name); title.setStyleSheet("color: #00ff7f; font-weight: bold; font-size: 13px; background: transparent;")
+        self.status_ball = QFrame(); self.status_ball.setFixedSize(10, 10)
+        h_layout.addWidget(title); h_layout.addStretch(); h_layout.addWidget(self.status_ball)
+        v_layout.addLayout(h_layout)
+        desc_lbl = QLabel(desc); desc_lbl.setStyleSheet("color: rgba(255, 255, 255, 100); font-size: 10px;"); v_layout.addWidget(desc_lbl)
+        self.update_status()
+
+    def update_status(self):
+        colors = {"idle": "#444", "running": "#ffd700", "success": "#00ff7f", "failed": "#ff4500"}
+        self.status_ball.setStyleSheet(f"border-radius: 5px; background-color: {colors.get(self.status, 'gray')}; border: 1px solid white;")
 
 class VisualDockV2(QWidget):
     def __init__(self):
         super().__init__()
-        # 1. 注入 Agent 大脑
-        self.agent = RemoteAgent()
-        self.profile_list = list(self.agent.profiles.keys())
-        self.profile_index = 0
+        self.bridge = None 
+        self.wm = WindowManager(["MSI", "Chrome"]) # 预初始化对位引擎
+        self.panel_width_log = 260
+        self.is_docked = False
+        self.is_manual = False
+        self.locked_hwnd = None
+        self.detected_title = "已就绪"
         
-        # 默认锁定
-        if self.profile_list:
-            self.target_title_keyword = self.profile_list[self.profile_index].lower()
-        else:
-            self.target_title_keyword = "oliver"
-        self.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint | 
-            Qt.WindowType.WindowStaysOnTopHint | 
-            Qt.WindowType.Tool
-        )
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         
-        self.resize(1000, 800)
-        self.move(200, 200) # 初始位置略微偏移，防止挡住中心
-        self.is_docked = False
-        self.target_title_keyword = "oliver"
-        self.detected_title = "正在寻找目标..."
+        layout = QHBoxLayout(self); layout.setContentsMargins(0, 0, 0, 0); layout.setSpacing(0)
+        self.overlay = QWidget(); layout.addWidget(self.overlay)
+        self.init_panel(layout)
         
-        self.default_color = QColor(0, 191, 255, 120) # 亮蓝
-        self.active_color = QColor(50, 255, 50, 180)   # 亮绿
-        self.current_color = self.default_color
-        
-        # 键盘交互需要焦点
-        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.check_window_collision)
-        self.timer.start(500) # 提高采样率到 0.5 秒
-        
-        self.old_pos = None
+        self.timer = QTimer(); self.timer.timeout.connect(self.sync_logic); self.timer.start(300) # 提高到 3.3 FPS 追踪
+        QTimer.singleShot(1000, self.lazy_load_brain)
 
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    def init_panel(self, layout):
+        self.panel = QFrame()
+        self.panel.setFixedWidth(self.panel_width_log)
+        self.panel.setStyleSheet("background-color: rgba(15, 15, 20, 250); border-left: 2px solid #00ff7f;")
+        p_layout = QVBoxLayout(self.panel); p_layout.setContentsMargins(15, 20, 15, 15)
         
-        # 1. 边框
-        pen_width = 10 if self.is_docked else 6
-        painter.setPen(QPen(self.current_color, pen_width))
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawRect(self.rect().adjusted(5, 5, -5, -5))
+        title = QLabel("MISSION HUB V13"); title.setStyleSheet("color: #00ff7f; font-weight: bold; font-size: 16px; margin-bottom: 20px;")
+        p_layout.addWidget(title)
         
-        # 2. 状态信息
-        painter.setPen(QPen(Qt.GlobalColor.white))
-        font = QFont("Microsoft YaHei", 12, QFont.Weight.Bold)
-        painter.setFont(font)
-        
-        status_text = f"目标: {self.target_title_keyword.upper()} | {self.detected_title}"
-        if self.is_docked:
-            status_text = f" [已锁定: {self.target_title_keyword.upper()}] {self.detected_title}"
+        self.cards = []
+        steps = [("1. 识别并点击小图", "地标定位 + 图片对位"), ("2. 等待大图弹出", "画面增量监测"), ("3. 注入方向键序列", "物理拟真注入")]
+        for i, (n, d) in enumerate(steps):
+            c = FlowStepCard(n, d, i); p_layout.addWidget(c); self.cards.append(c)
             
-        # 在底部绘制状态栏背景
-        painter.setBrush(QColor(0, 0, 0, 180))
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRect(0, self.height()-45, self.width(), 45)
+        p_layout.addStretch()
+        self.lbl_status = QLabel("Mode: Scanning..."); self.lbl_status.setStyleSheet("color: #888; font-size: 10px;")
+        p_layout.addWidget(self.lbl_status)
         
-        # 绘制文本
-        painter.setPen(QPen(Qt.GlobalColor.white))
-        painter.drawText(self.rect().adjusted(10, 0, -10, -5), Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter, status_text)
-        
-        # 绘制操作提示 (右下角)
-        hint_font = QFont("Consolas", 8)
-        painter.setFont(hint_font)
-        painter.drawText(self.rect().adjusted(0, 0, -10, -5), Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight, "TAB:切机 | F5:重校")
+        btn_quit = QPushButton("QUIT MISSION (ESC)"); btn_quit.setStyleSheet("background: #522; color: #fcc; padding: 10px; border-radius: 4px;")
+        btn_quit.clicked.connect(self.close); p_layout.addWidget(btn_quit)
+        layout.addWidget(self.panel)
 
-        # 3. 中心准星 (未对齐时)
-        if not self.is_docked:
-            painter.setPen(QPen(self.default_color, 2))
-            cx, cy = self.width() // 2, self.height() // 2
-            painter.drawLine(cx - 40, cy, cx + 40, cy)
-            painter.drawLine(cx, cy - 40, cx, cy + 40)
-
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.old_pos = event.globalPosition().toPoint()
-
-    def mouseMoveEvent(self, event):
-        if self.old_pos:
-            delta = event.globalPosition().toPoint() - self.old_pos
-            self.move(self.x() + delta.x(), self.y() + delta.y())
-            self.old_pos = event.globalPosition().toPoint()
-
-    def mouseReleaseEvent(self, event):
-        self.old_pos = None
-        self.save_config()
-
-    def keyPressEvent(self, event):
-        """交互快捷键：Tab 切机，F5 校准"""
-        if event.key() == Qt.Key.Key_Tab:
-            # 循环切换档案
-            self.agent.load_profiles() # 实时刷新
-            self.profile_list = list(self.agent.profiles.keys())
-            if self.profile_list:
-                self.profile_index = (self.profile_index + 1) % len(self.profile_list)
-                self.target_title_keyword = self.profile_list[self.profile_index].lower()
-                print(f"[HUD] 切换手动锁定目标: {self.target_title_keyword}")
-                self.update()
-        
-        elif event.key() == Qt.Key.Key_F5:
-            # 实时校准当前吸附的机器
-            print(f"[HUD] 正在对当前机器 {self.target_title_keyword} 执行一键溯源...")
-            self.agent.calibrate(self.target_title_keyword)
-            # 视觉闪烁反馈
-            self.current_color = QColor(255, 255, 255, 200)
-            QTimer.singleShot(200, lambda: self.__setattr__('current_color', self.active_color))
-            self.update()
-        
-        elif event.key() == Qt.Key.Key_Escape:
-            # 优雅退出
-            print("[HUD] 收到退出指令，正在关闭指挥中心...")
-            self.close()
-            
-        elif event.key() == Qt.Key.Key_F6:
-            # 【新功能】所见即所得截图
-            print("[HUD] 正在拍照：截取当前相框覆盖区域...")
-            self.capture_roi()
-
-    def capture_roi(self):
-        """直接截取当前 HUD 覆盖的区域"""
+    def lazy_load_brain(self):
         try:
-            screen = QApplication.primaryScreen()
-            # 隐藏自己一瞬，防止拍到蓝框
-            self.hide()
-            QTimer.singleShot(100, self._do_capture)
-        except Exception as e:
-            print(f"截图失败: {e}")
+            from src.execution.task_bridge import TaskBridge
+            self.bridge = TaskBridge()
+            self.lbl_status.setText("Brain: Connected")
+            for i, card in enumerate(self.cards):
+                card.mousePressEvent = lambda e, idx=i: self.bridge.run_step(idx, self.refresh)
+        except: self.lbl_status.setText("Brain: Connect Failed")
 
-    def _do_capture(self):
-        screen = QApplication.primaryScreen()
-        # 按照 HUD 自己的几何尺寸抓取
-        pixmap = screen.grabWindow(0, self.x(), self.y(), self.width(), self.height())
-        target = r"D:\Dev\autoplay\records\msi_frame_shot.jpg"
-        pixmap.save(target, "JPG")
-        print(f"--- [相框自拍成功] 已保存至: {target} ---")
-        self.show()
+    def refresh(self):
+        if self.bridge:
+            for i, c in enumerate(self.cards): c.status = self.bridge.steps[i].status; c.update_status()
+        self.update()
 
-    def check_window_collision(self):
-        """核心：使用 win32gui 内核 API 强制对齐"""
+    def sync_logic(self):
+        self.refresh()
+        if self.is_manual: return
+        
         try:
-            # 1. 精准寻找句柄 (HWND)
-            def callback(hwnd, windows):
-                if win32gui.IsWindowVisible(hwnd):
-                    title = win32gui.GetWindowText(hwnd)
-                    if self.target_title_keyword in title.lower() and "chrome" in title.lower():
-                        windows.append((hwnd, title))
-                return True
+            # 动态检测当前屏幕缩放系数
+            scale = self.screen().devicePixelRatio()
             
-            target_windows = []
-            win32gui.EnumWindows(callback, target_windows)
+            # 对位追踪
+            if self.locked_hwnd and win32gui.IsWindow(self.locked_hwnd):
+                self.wm.hwnd = self.locked_hwnd
+            else: self.locked_hwnd = None
             
-            if target_windows:
-                # 选取第一个匹配的
-                hwnd, title = target_windows[0]
-                self.detected_title = title
+            rect = self.wm.get_window_rect()
+            if rect:
+                l, t, w, h = rect['left'], rect['top'], rect['width'], rect['height']
+                # 转换物理坐标为逻辑坐标 (核心修正)
+                log_l, log_t = int(l/scale), int(t/scale)
+                log_w, log_h = int(w/scale), int(h/scale)
                 
-                # 2. 抓取内核级物理像素矩形 (绝对准)
-                rect = win32gui.GetWindowRect(hwnd)
-                # rect = (left, top, right, bottom)
-                win_rect = QRect(rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1])
-                dock_rect = QRect(self.x(), self.y(), self.width(), self.height())
-                
-                # 3. 磁力判定与【动态追随】
-                if dock_rect.intersects(win_rect):
-                    # 🚨 核心增强：只要是吸附状态，每一帧都强制对齐（动态追随）
-                    if not self.is_docked:
-                        print(f"[KERNEL-FOLLOW] 发现目标 {title}，开启动态追随模式")
-                        self.is_docked = True
-                        self.current_color = self.active_color
-                    
-                    # 无论是否是刚吸附，只要坐标或大小对不上，就强制矫正
-                    # 为了平滑，只要偏差大于 2 像素就更新
-                    if abs(self.x() - rect[0]) > 2 or abs(self.width() - (rect[2]-rect[0])) > 2:
-                        win32gui.SetWindowPos(
-                            int(self.winId()), 
-                            win32con.HWND_TOPMOST, 
-                            rect[0], rect[1], rect[2]-rect[0], rect[3]-rect[1], 
-                            win32con.SWP_NOACTIVATE
-                        )
-                        self.update()
-                        self.save_config()
-                else:
-                    if self.is_docked:
-                        self.is_docked = False
-                        self.current_color = self.default_color
-                        print("[RELEASE] 已脱离吸附区域。")
-                        self.update()
+                # 同步 UI 尺寸与位置
+                self.move(log_l, log_t)
+                self.setFixedSize(log_w + self.panel_width_log, log_h)
+                self.overlay.setFixedSize(log_w, log_h)
+                self.is_docked = True; self.detected_title = rect['title']
             else:
-                self.detected_title = f"未发现 {self.target_title_keyword} 窗口"
-                if self.is_docked:
-                    self.is_docked = True # 保持吸附颜色，但标记未发现
-                    self.detected_title = "窗口可能已最小化或被遮挡"
-                    self.update()
-                    
-        except Exception as e:
-            print(f"Error in collision detection: {e}")
-            pass
+                self.is_docked = False; self.detected_title = "等待窗口..."
+        except: pass
+        self.update()
 
-    def save_config(self):
-        config_path = r"D:\Dev\autoplay\config\calibration_db.json"
-        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+    def paintEvent(self, e):
+        painter = QPainter(self); painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        r = self.overlay.geometry()
+        # 只要吸附上就变绿，明确反馈
+        status_color = QColor(0, 255, 127, 240) if self.is_docked else QColor(0, 191, 255, 100)
+        painter.setPen(QPen(status_color, 3)); painter.drawRect(r.adjusted(2, 2, -2, -2))
         
-        # 🚨 核心修正：使用物理像素保存，确保截图库 100% 对齐
-        rect = win32gui.GetWindowRect(int(self.winId()))
-        phys_rect = {
-            "x": rect[0], 
-            "y": rect[1], 
-            "width": rect[2] - rect[0], 
-            "height": rect[3] - rect[1]
-        }
-        
-        data = {
-            "dock_rect": phys_rect,
-            "status": "docked" if self.is_docked else "floating",
-            "last_target": self.target_title_keyword
-        }
-        with open(config_path, "w") as f:
-            json.dump(data, f, indent=4)
-        print(f"[HUD] 物理坐标档案已同步: {phys_rect}")
+        painter.setBrush(QColor(0,0,0,160)); painter.setPen(Qt.PenStyle.NoPen); painter.drawRect(r.x(), r.height()-30, r.width(), 30)
+        painter.setPen(QPen(Qt.GlobalColor.white)); painter.setFont(QFont("Consolas", 8))
+        tag = "[LOCKED]" if self.locked_hwnd else "[AUTO]"
+        painter.drawText(r.adjusted(10, 0, -10, -5), Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignLeft, f"{tag} {self.detected_title}")
+
+    def mousePressEvent(self, e):
+        if e.button() == Qt.MouseButton.LeftButton: 
+            self.old_p = e.globalPosition().toPoint(); self.is_manual = True
+            
+    def mouseMoveEvent(self, e):
+        if hasattr(self, 'old_p') and self.old_p:
+            d = e.globalPosition().toPoint() - self.old_p; self.move(self.x() + d.x(), self.y() + d.y()); self.old_p = e.globalPosition().toPoint()
+    
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key.Key_Escape: self.close()
+        elif e.key() == Qt.Key.Key_Space:
+            self.lock_under_hud()
+
+    def lock_under_hud(self):
+        scale = self.screen().devicePixelRatio()
+        geom = self.overlay.geometry()
+        cp = self.mapToGlobal(geom.center())
+        found = win32gui.WindowFromPoint((int(cp.x()*scale), int(cp.y()*scale)))
+        while win32gui.GetParent(found): found = win32gui.GetParent(found)
+        if found and found != int(self.winId()):
+            self.locked_hwnd = found; self.is_manual = False
+            print(f"[HUD] Locked HWND: {self.locked_hwnd}")
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    dock = VisualDockV2()
-    dock.show()
-    sys.exit(app.exec())
+    try:
+        app = QApplication(app_args := sys.argv)
+        app.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+        window = VisualDockV2()
+        window.show()
+        sys.exit(app.exec())
+    except Exception:
+        with open("crash.log", "w") as f: f.write(traceback.format_exc())
+        print(traceback.format_exc())

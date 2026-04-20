@@ -1,5 +1,11 @@
 import sys
 import traceback
+import io
+
+# 强制设置控制台输出为 UTF-8，解决 Windows 下的乱码问题
+if sys.platform.startswith('win'):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 print("--- Agent Boot Started ---")
 
