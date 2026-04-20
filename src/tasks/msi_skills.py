@@ -197,3 +197,106 @@ class MSISkills:
 
         print("[SKILL] Zoom/Pan/Reset 完成。")
         return True
+
+    def action_source_navigate_zoom_circle(self,
+                                           source_keywords=["source"],
+                                           response_keywords=["response a", "response"],
+                                           scroll_amount=4,
+                                           circle_radius=70,
+                                           circle_steps=24):
+        """
+        原子积木 - 第 5 步完整链路:
+        1. 点击 SOURCE 左侧缩略图
+        2. 按下向下方向键触发导航
+        3. 等待右侧 Response A 大图出现
+        4. 点击该大图
+        5. 滚轮 Zoom In
+        6. 按住左键绕圆圈 PAN
+        7. 双击还原
+        """
+        import pydirectinput
+        import win32api, win32con, math
+
+        print(f"\n[SKILL] 执行 Source->Down->ResponseA->Zoom->Circle->Reset")
+
+        config = self._load_config()
+        if not config: return False
+        base_x = config['dock_rect']['x']
+        base_y = config['dock_rect']['y']
+
+        # Step 1: OCR 找 SOURCE 地标
+        view_path = self.action_screenshot("source_nav")
+        img = cv2.imread(view_path)
+        context = self.ocr.read_screen(img)
+        src_x, src_y = -1, -1
+        for line in context.split('\n'):
+            if any(k.lower() in line.lower() for k in source_keywords):
+                try:
+                    parts = line.split("坐标: (")[1].split(")")[0].split(",")
+                    src_x, src_y = int(parts[0]), int(parts[1])
+                    break
+                except: continue
+
+        if src_y == -1:
+            print("[SKILL] 未找到 SOURCE，终止。")
+            return False
+
+        # 点击 SOURCE 下方小图标
+        self.agent.click_at(base_x + src_x, base_y + src_y + 80)
+        time.sleep(0.5)
+
+        # Step 2: 按下方向键
+        pydirectinput.keyDown('down'); time.sleep(0.15); pydirectinput.keyUp('down')
+        time.sleep(1.0)
+
+        # Step 3: 等待 Response A 出现
+        self.action_wait_visual(threshold=10, timeout=8)
+
+        # Step 4: 重新截图找 Response A 大图
+        img2 = cv2.imread(self.action_screenshot("response_a"))
+        context2 = self.ocr.read_screen(img2)
+        resp_x, resp_y = -1, -1
+        for line in context2.split('\n'):
+            if any(k.lower() in line.lower() for k in response_keywords):
+                try:
+                    parts = line.split("坐标: (")[1].split(")")[0].split(",")
+                    resp_x, resp_y = int(parts[0]), int(parts[1])
+                    break
+                except: continue
+
+        if resp_y == -1:
+            print("[SKILL] 未找到 Response A，终止。")
+            return False
+
+        # Response A 文字右侧大图（+偏移）
+        img_x = base_x + resp_x + 150
+        img_y = base_y + resp_y + 60
+        self.agent.click_at(img_x, img_y)
+        time.sleep(0.4)
+
+        # Step 5: 滚轮 Zoom In
+        pydirectinput.moveTo(img_x, img_y)
+        for _ in range(scroll_amount):
+            win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, 120, 0)
+            time.sleep(0.15)
+        time.sleep(0.5)
+
+        # Step 6: 圆圈 PAN
+        pydirectinput.moveTo(img_x + circle_radius, img_y)
+        pydirectinput.mouseDown(button='left')
+        time.sleep(0.1)
+        for step in range(circle_steps + 1):
+            angle = 2 * math.pi * step / circle_steps
+            pydirectinput.moveTo(
+                img_x + int(circle_radius * math.cos(angle)),
+                img_y + int(circle_radius * math.sin(angle))
+            )
+            time.sleep(0.04)
+        pydirectinput.mouseUp(button='left')
+        time.sleep(0.5)
+
+        # Step 7: 双击还原
+        pydirectinput.doubleClick(img_x, img_y)
+        time.sleep(0.3)
+        print("[SKILL] Source->Navigate->Zoom->Circle->Reset 完成。")
+        return True

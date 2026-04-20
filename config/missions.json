@@ -33,7 +33,19 @@
         "description": "点击 Ref1 大图 → 滚轮放大 → 拖拽 PAN → 双击还原"
       },
       {
-        "name": "5. 最终截图存档",
+        "name": "5. Source→Down→ResponseA→圆圈PAN→还原",
+        "action": "action_source_navigate_zoom_circle",
+        "params": {
+          "source_keywords": ["source"],
+          "response_keywords": ["response a", "response"],
+          "scroll_amount": 4,
+          "circle_radius": 70,
+          "circle_steps": 24
+        },
+        "description": "点 SOURCE 缩略图 → ↓ 导航 → 找 Response A 大图 → Zoom → 画圆圈 PAN → 双击还原"
+      },
+      {
+        "name": "6. 最终截图存档",
         "action": "action_screenshot",
         "params": {"label": "result_final"},
         "description": "保存当前屏幕状态作为任务成果"
