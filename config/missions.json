@@ -1,5 +1,5 @@
 {
-  "current_mission": "图片打分任务",
+  "current_mission": "Tina 评分任务",
   "missions": {
     "图片打分任务": [
       {
@@ -9,47 +9,92 @@
         "description": "寻找 Inputs 文字并定位下方图片中心"
       },
       {
-        "name": "2. 等待大图弹出",
-        "action": "action_wait_visual",
-        "params": {"threshold": 15, "timeout": 10},
-        "description": "监控页面增量变化，确认大图加载"
-      },
-      {
-        "name": "3. 注入方向键序列",
+        "name": "2. 注入方向键序列",
         "action": "action_press_keys",
         "params": {"keys": ["down", "right", "left", "up"]},
         "description": "物理穿透注入按键流，遍历所有对比图"
       },
       {
-        "name": "4. Ref1 放大 / PAN / 还原",
-        "action": "action_zoom_pan_reset",
-        "params": {
-          "landmark_keywords": ["ref1", "ref", "response"],
-          "scroll_amount": 3,
-          "pan_dx": 80,
-          "pan_dy": 40,
-          "reset_by_double_click": true
-        },
-        "description": "点击 Ref1 大图 → 滚轮放大 → 拖拽 PAN → 双击还原"
-      },
-      {
-        "name": "5. Source→Down→ResponseA→圆圈PAN→还原",
-        "action": "action_source_navigate_zoom_circle",
-        "params": {
-          "source_keywords": ["source"],
-          "response_keywords": ["response a", "response"],
-          "scroll_amount": 4,
-          "circle_radius": 70,
-          "circle_steps": 24
-        },
-        "description": "点 SOURCE 缩略图 → ↓ 导航 → 找 Response A 大图 → Zoom → 画圆圈 PAN → 双击还原"
-      },
-      {
-        "name": "6. 最终截图存档",
+        "name": "7. 最终截图存档",
         "action": "action_screenshot",
         "params": {"label": "result_final"},
         "description": "保存当前屏幕状态作为任务成果"
       }
-    ]
+    ],
+    "Tina 评分任务": {
+      "id": "tina_marking_v4",
+      "steps": [
+        {
+          "name": "0. 检查并清理弹窗广告",
+          "action": "action_click_landmark",
+          "params": {"keywords": ["取消", "开通会员"], "optional": true},
+          "description": "如果发现向日葵广告弹窗，自动将其关闭"
+        },
+        {
+          "name": "1. 首页截图拍照",
+          "action": "action_screenshot",
+          "params": {"label": "top"},
+          "description": "拍摄页面顶部的证据快照"
+        },
+        {
+          "name": "2. 强力对角并滚动到底部",
+          "action": "action_scroll_home_end",
+          "params": {"direction": "end"},
+          "description": "内容区地标对焦+连发滚动连招"
+        },
+        {
+          "name": "3. 底部截图拍照",
+          "action": "action_screenshot",
+          "params": {"label": "bottom"},
+          "description": "拍摄页面底部的证据快照"
+        },
+        {
+          "name": "4. 返回页面顶部",
+          "action": "action_scroll_home_end",
+          "params": {"direction": "home"},
+          "description": "回到顶部准备定位操作"
+        },
+        {
+          "name": "5. 内容唤醒并点击 Inputs",
+          "action": "action_click_landmark_v2",
+          "params": {"keywords": ["Omni", "Inputs", "Guidelines", "Earnings"]},
+          "description": "增强环境自愈：如果身处 Earnings 页面，以此为锚点强行切回任务页"
+        },
+        {
+          "name": "5.5 加载延时缓冲",
+          "action": "action_sleep",
+          "params": {"seconds": 3.0},
+          "description": "确保页面渲染稳定后再进行按键操作"
+        },
+        {
+          "name": "6. 内部视图导航",
+          "action": "action_press_keys",
+          "params": {"keys": ["down", "right"]},
+          "description": "方向键触发 Response A/B 视图"
+        },
+        {
+          "name": "7. 暴力巡航 Response A",
+          "action": "action_zoom_pan_reset",
+          "params": {
+            "landmark_keywords": ["Response A", "Response"],
+            "scroll_amount": 15,
+            "pan_dx": 180,
+            "pan_dy": 100
+          },
+          "description": "15倍暴力缩放+大跨度平移巡航"
+        },
+        {
+          "name": "8. 暴力巡航 Response B",
+          "action": "action_zoom_pan_reset",
+          "params": {
+            "landmark_keywords": ["Response B", "Response"],
+            "scroll_amount": 15,
+            "pan_dx": -180,
+            "pan_dy": 100
+          },
+          "description": "15倍暴力缩放+大跨度平移巡航"
+        }
+      ]
+    }
   }
 }

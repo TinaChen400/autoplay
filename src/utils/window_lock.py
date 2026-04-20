@@ -20,19 +20,22 @@ class WindowManager:
 
     def find_remote_window(self) -> Optional[int]:
         def callback(hwnd, hwnds):
-            if win32gui.IsWindowVisible(hwnd):
+            if win32gui.IsWindowVisible(hwnd) and not win32gui.IsIconic(hwnd):
                 title = win32gui.GetWindowText(hwnd).lower()
                 for kw in self.keywords:
                     if kw and kw.lower() in title:
-                        # 排除 AI Agent 自身的透明窗口
+                        # 核心补丁：排除 AI Agent 自身，并确保窗口有实际物理尺寸（排除影子窗口）
                         if "ai agent" not in title and "visual" not in title:
-                            hwnds.append(hwnd)
+                            l, t, r, b = win32gui.GetWindowRect(hwnd)
+                            if (r - l) > 100 and (b - t) > 100: # 必须大于 100 像素
+                                hwnds.append(hwnd)
             return True
         
         hwnds = []
         win32gui.EnumWindows(callback, hwnds)
         if hwnds:
-            self.hwnd = hwnds[0]
+            # 强化逻辑：如果有多个同名窗口，优先选择 HWND 较大的（通常是更晚创建的活跃窗口）
+            self.hwnd = sorted(hwnds, reverse=True)[0]
             return self.hwnd
         return None
 

@@ -1,0 +1,20 @@
+{
+  "current_profile": "TINA-Vertical",
+  "profiles": {
+    "TINA-Vertical": {
+      "device_name": "TINA",
+      "monitoring_mode": "MainWorkspace",
+      "screen_geometry": "1440x2560",
+      "calibration": {
+        "dock_rect": {
+          "x": 316,
+          "y": 1383,
+          "width": 1426,
+          "height": 850
+        },
+        "dpi_offset_y": 140
+      },
+      "last_updated": 1776724408.3571382
+    }
+  }
+}

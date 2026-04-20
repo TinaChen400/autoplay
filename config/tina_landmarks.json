@@ -1,0 +1,22 @@
+{
+    "Omni Elo": {
+        "x_rel": 104,
+        "y_rel": 192,
+        "original": "文本: 'Omni Elo' | 坐标: (104, 192)"
+    },
+    "Inputs": {
+        "x_rel": 154,
+        "y_rel": 260,
+        "original": "文本: 'Inputs' | 坐标: (154, 260)"
+    },
+    "Response A": {
+        "x_rel": 212,
+        "y_rel": 550,
+        "original": "文本: 'Response A' | 坐标: (212, 550)"
+    },
+    "Response B": {
+        "x_rel": 1021,
+        "y_rel": 550,
+        "original": "文本: 'Response B' | 坐标: (1021, 550)"
+    }
+}

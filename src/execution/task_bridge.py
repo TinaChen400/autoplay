@@ -2,6 +2,7 @@ import sys
 import threading
 import json
 import os
+import time
 from typing import Callable, List, Dict
 
 sys.path.append(r"D:/Dev/autoplay")
@@ -22,47 +23,151 @@ class TaskBridge:
     def __init__(self):
         self.skills = MSISkills()
         self.config_path = r"D:/Dev/autoplay/config/missions.json"
+        self.debug_log = r"D:/Dev/autoplay/records/hud_debug.log"
         self.steps: List[TaskStep] = []
+        self._log("TaskBridge 引擎初始化完毕。")
         self.load_mission()
+
+    def _log(self, msg):
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        with open(self.debug_log, "a", encoding="utf-8") as f:
+            f.write(f"[{timestamp}] {msg}\n")
+        print(msg)
+
+    @property
+    def all_mission_names(self) -> List[str]:
+        return list(self.full_config.get("missions", {}).keys())
 
     def load_mission(self, mission_name: str = None):
         """从 JSON 加载积木流"""
-        if not os.path.exists(self.config_path):
-            return
-        
+        if not os.path.exists(self.config_path): return
         with open(self.config_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+            self.full_config = json.load(f)
             
-        target = mission_name or data.get("current_mission")
-        raw_steps = data.get("missions", {}).get(target, [])
+        self.current_mission_name = mission_name or self.full_config.get("current_mission", "图片打分任务")
+        mission_data = self.full_config.get("missions", {}).get(self.current_mission_name, [])
         
+        # 兼容性补丁：检查是直接的步骤列表，还是包含元数据的对象
+        if isinstance(mission_data, dict):
+            raw_steps = mission_data.get("steps", [])
+        else:
+            raw_steps = mission_data
+            
         self.steps = [
             TaskStep(s["name"], s["action"], s.get("params", {}), s.get("description", ""))
             for s in raw_steps
         ]
-        print(f"[BRIDGE] 成功加载积木流: {target} ({len(self.steps)} 块)")
+        print(f"[BRIDGE] 加载任务: {self.current_mission_name} ({len(self.steps)} 步)")
+
+    def save_mission(self):
+        """将当前内存中的积木流持久化回 JSON (结构化升级版)"""
+        if not hasattr(self, 'full_config'): return
+        serialized_steps = [
+            {"name": s.name, "action": s.methodName, "params": s.params, "description": s.description}
+            for s in self.steps
+        ]
+        
+        # 智能写入：如果是字典结构，更新其中的 steps；如果是列表结构，直接替换
+        current_data = self.full_config["missions"].get(self.current_mission_name)
+        if isinstance(current_data, dict):
+            current_data["steps"] = serialized_steps
+        else:
+            self.full_config["missions"][self.current_mission_name] = serialized_steps
+            
+        self.full_config["current_mission"] = self.current_mission_name
+        with open(self.config_path, "w", encoding="utf-8") as f:
+            json.dump(self.full_config, f, indent=2, ensure_ascii=False)
+        print(f"[BRIDGE] 配置已成功保存(结构敏感型): {self.current_mission_name}")
 
     def run_step(self, index: int, callback: Callable = None):
-        """执行单块积木"""
+        """执行单块积木 (加固版：防冲突 + 实时反馈)"""
         if index < 0 or index >= len(self.steps): return
-
         step = self.steps[index]
+        
+        # 状态保护：如果该积木正在跑，拒绝重复启动
+        if step.status == "running": 
+            self._log(f"[BRIDGE] 警告: 积木 {step.name} 尚未结束，忽略请求。")
+            return
+            
         step.status = "running"
+        self._log(f"[BRIDGE] >>> 手动启动单步: {step.name}")
         if callback: callback()
 
         def _worker():
             try:
-                # 动态反射执行原子技能
+                self._log(f"[THREAD] 正在进入技能核心: {step.methodName}")
                 method = getattr(self.skills, step.methodName)
                 result = method(**step.params)
                 step.status = "success" if result is not False else "failed"
+                self._log(f"[THREAD] 积木执行完成! 结果={step.status}")
             except Exception as e:
-                print(f"[BRIDGE] 积木执行异常 {step.name}: {e}")
+                import traceback
+                error_msg = traceback.format_exc()
+                self._log(f"[THREAD] 崩溃异常:\n{error_msg}")
                 step.status = "failed"
-            
             if callback: callback()
 
-        threading.Thread(target=_worker, daemon=True).start()
+        t = threading.Thread(target=_worker, daemon=True)
+        t.start()
+        return t
+
+    def run_mission(self, callback: Callable = None):
+        """全自动驾驶：按顺序跑完所有积木"""
+        print("[MISSION] 准备启动全自动指挥流程...")
+        self.reset()
+        def _chain_executor():
+            print("[MISSION] _chain_executor 后台线程已激活！")
+            for i in range(len(self.steps)):
+                step = self.steps[i]
+                print(f"[MISSION] 正在自动执行第 {i+1} 步: {step.name}")
+                
+                # 阻塞式执行（在工作线程中）
+                try:
+                    step.status = "running"
+                    if callback: callback()
+                    
+                    print(f"[MISSION] 正在反射调用积木函数: {step.methodName}...")
+                    method = getattr(self.skills, step.methodName)
+                    result = method(**step.params)
+                    print(f"[MISSION] 积木函数 {step.methodName} 返回结果: {result}")
+                    
+                    if result is False:
+                        step.status = "failed"
+                        print(f"[MISSION] 任务在第 {i+1} 步中断，原因：执行失败")
+                        if callback: callback()
+                        # 强制最后刷新一次，确保按钮恢复
+                        self.reset_from_fail = True
+                        break
+                    
+                    step.status = "success"
+                    if callback: callback()
+                    time.sleep(1.0) # 步骤间停顿，给系统喘息时间
+                except Exception as e:
+                    step.status = "failed"
+                    print(f"[MISSION] 异常中断: {e}")
+                    if callback: callback()
+                    break
+            print("[MISSION] 全自动任务流程运行结束")
+
+        import time
+        threading.Thread(target=_chain_executor, daemon=True).start()
+
+    def delete_step(self, index: int):
+        if 0 <= index < len(self.steps):
+            del self.steps[index]
+            self.save_mission()
+
+    def move_step(self, index: int, direction: int):
+        # direction: -1 (up), 1 (down)
+        new_idx = index + direction
+        if 0 <= new_idx < len(self.steps):
+            self.steps[index], self.steps[new_idx] = self.steps[new_idx], self.steps[index]
+            self.save_mission()
+
+    def update_step_params(self, index: int, new_params: dict):
+        if 0 <= index < len(self.steps):
+            self.steps[index].params.update(new_params)
+            self.save_mission()
 
     def reset(self):
         for s in self.steps: s.status = "idle"

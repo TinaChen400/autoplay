@@ -15,7 +15,7 @@ from src.utils.vision import VisionCapture
 from src.execution.ahk_executor import AHKExecutor
 
 class RemoteAgent:
-    def __init__(self, profile_name="default"):
+    def __init__(self, profile_name="Tina"):
         self.profile_name = profile_name
         self.config_dir = r"D:\Dev\autoplay\config"
         self.profiles_path = os.path.join(self.config_dir, "profiles.json")
