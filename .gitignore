@@ -9,8 +9,8 @@ ENV/
 
 # Project Specific
 temp/
-records/*.png
-records/*.jpg
+records/
+crash.log
 calibration_db.json
 config/calibration_db.json
 scratch/

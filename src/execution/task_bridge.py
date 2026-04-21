@@ -7,6 +7,7 @@ from typing import Callable, List, Dict
 
 sys.path.append(r"D:/Dev/autoplay")
 from src.tasks.msi_skills import MSISkills
+from src.execution.recorder import MissionRecorder
 
 class TaskStep:
     def __init__(self, name: str, methodName: str, params: dict, description: str):
@@ -25,8 +26,12 @@ class TaskBridge:
         self.config_path = r"D:/Dev/autoplay/config/missions.json"
         self.debug_log = r"D:/Dev/autoplay/records/hud_debug.log"
         self.steps: List[TaskStep] = []
+        self.is_recording = False
+        self.on_step_added_cb = None # UI 刷新回调
+        self.on_visual_feedback_cb = None # 视觉框反馈回调 (V11)
         self._log("TaskBridge 引擎初始化完毕。")
         self.load_mission()
+        self.recorder = MissionRecorder(self, self.skills.hw, self.skills)
 
     def _log(self, msg):
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -171,3 +176,59 @@ class TaskBridge:
 
     def reset(self):
         for s in self.steps: s.status = "idle"
+
+    # --- 录制与管理核心 (V6 新增) ---
+    def start_recording(self, mission_name=None):
+        """开启录制模式"""
+        if mission_name:
+            self.create_new_mission(mission_name)
+        self.is_recording = True
+        self.recorder.start()
+        self._log(f"[REC] 录制模式已激活: {self.current_mission_name}")
+
+    def stop_recording(self):
+        """停止录制并持久化"""
+        self.is_recording = False
+        self.recorder.stop()
+        self.save_mission()
+        self._log(f"[REC] 录制已停止，配置已同步至磁盘。")
+
+    def add_recorded_step(self, step_dict):
+        """由 Recorder 实时调用的回调，动态注入积木"""
+        step = TaskStep(
+            step_dict["name"], 
+            step_dict["action"], 
+            step_dict.get("params", {}), 
+            step_dict.get("description", "")
+        )
+        self.steps.append(step)
+        # 实时持久化一次，防止崩溃丢失
+        self.save_mission()
+        if self.on_step_added_cb:
+            self.on_step_added_cb()
+
+    def create_new_mission(self, name):
+        """创建一个全新的空白任务蓝图"""
+        self.current_mission_name = name
+        self.steps = []
+        if "missions" not in self.full_config:
+            self.full_config["missions"] = {}
+        
+        if name not in self.full_config["missions"]:
+             self.full_config["missions"][name] = []
+        
+        self.full_config["current_mission"] = name
+        self.save_mission()
+        self._log(f"[BRIDGE] 新任务已创建: {name}")
+
+    def rename_mission(self, new_name):
+        """修改当前任务的标题"""
+        old_name = self.current_mission_name
+        if old_name == new_name: return
+        
+        if old_name in self.full_config["missions"]:
+            data = self.full_config["missions"].pop(old_name)
+            self.full_config["missions"][new_name] = data
+            self.current_mission_name = new_name
+            self.save_mission()
+            self._log(f"[BRIDGE] 任务重命名: {old_name} -> {new_name}")

@@ -11,6 +11,9 @@ from src.utils.vision import VisionCapture
 from src.utils.ocr_reader import OCRReader
 from src.execution.remote_agent import RemoteAgent
 from src.utils.hardware_manager import HardwareManager
+from src.utils.layout_parser import LayoutParser
+
+from src.utils.window_lock import WindowManager
 
 class MSISkills:
     """
@@ -22,6 +25,7 @@ class MSISkills:
         self.ocr = OCRReader()
         self.records_dir = r"D:/Dev/autoplay/records"
         self.hw = HardwareManager()
+        self.wm = WindowManager(["Tina", "MSI"])
 
     def _save_dock_rect(self, x, y, w, h):
         """由 UI 实时调用的同步接口，更新物理对位基准"""
@@ -129,10 +133,14 @@ class MSISkills:
             if any(k.lower() in ["取消", "multimango", "outlier", "omni", "continue"] for k in keywords):
                 tx, ty = base_x + ax, base_y + ay
                 print(f"[SKILL] UI 精准原位点击: ({tx}, {ty})")
+            elif offset_y != 140:
+                # 如果用户显式传入了偏移量（包括 0），则严格以此为准
+                tx, ty = base_x + ax, base_y + ay + offset_y
+                print(f"[SKILL] 遵循显式偏移量点击: ({tx}, {ty}) [Offset: {offset_y}]")
             else:
-                # 针对评分页中文字段落的 4K 适配方案 (增加偏移量确保点进内容区)
+                # 默认落入针对评分页中文字段落的 4K 适配方案 (原始 140 偏移)
                 tx, ty = base_x + ax + 30, base_y + ay + 140
-                print(f"[SKILL] 内容文字对位点击 (带重度偏移): ({tx}, {ty})")
+                print(f"[SKILL] 内容文字对位点击 (默认重度偏移模式): ({tx}, {ty})")
 
         # 全链路高度加固：物理焦点锁定 + 毫秒级原生点击
         import win32gui
@@ -159,6 +167,121 @@ class MSISkills:
 
         time.sleep(1.0) 
         return True
+
+    def action_click_smart(self, keywords=None, rel_x=0, rel_y=0, offset_y=0, optional=False, landmark_image=None, layout_size=None):
+        """
+        全场景鲁棒点击技能 (V26.1: 集成颜色空间结构对位)
+        算法优先级：0. 结构锚点(V26.1) -> 1. 视觉锚点(图标) -> 2. 语义地标(文字) -> 3. 物理对位
+        """
+        print(f"[SKILL] 智能对位点击 | Keywords: {keywords} | Image: {landmark_image} | Size: {layout_size}")
+        
+        # 0. V26.1: 尝试结构对位 (基于 V26 变色龙算法)
+        if layout_size:
+            from src.utils.layout_parser import LayoutParser
+            view_path = self.action_screenshot("structural_reanchor")
+            img = cv2.imread(view_path)
+            if img is not None:
+                # 在记录的相对位置执行颜色探测 (假设窗口缩放一致)
+                # 我们寻找点击中心 (rel_x, rel_y) 周围的颜色块
+                target_block = LayoutParser.detect_color_block(img, rel_x, rel_y)
+                if target_block:
+                    tbx, tby, tbw, tbh = target_block["rect"]
+                    # 如果识别到的块大小与录制时相近 (误差 15%)，认为对位成功
+                    if abs(tbw - layout_size[0]) < tbw*0.15 and abs(tbh - layout_size[1]) < tbh*0.15:
+                        rect_data = self.wm.get_window_rect()
+                        base_x = rect_data["left"] if rect_data else 0
+                        base_y = rect_data["top"] if rect_data else 0
+                        
+                        # 点击目标块的中心
+                        tx = base_x + tbx + tbw/2
+                        ty = base_y + tby + tbh/2 + offset_y
+                        
+                        print(f"[SKILL] V26.1 变色龙结构对位成功! -> 点击: ({tx}, {ty})")
+                        import win32api, win32con
+                        win32api.SetCursorPos((int(tx), int(ty)))
+                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+                        time.sleep(0.05)
+                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+                        return True
+        
+        # 0. 尝试视觉锚点定位 (V19: Icon Template Match)
+        if landmark_image:
+            anchor_path = os.path.join(self.records_dir, landmark_image)
+            if os.path.exists(anchor_path):
+                anchor_img = cv2.imread(anchor_path)
+                view_path = self.action_screenshot("landmark_search")
+                screen_img = cv2.imread(view_path)
+                
+                if anchor_img is not None and screen_img is not None:
+                    # 使用 OpenCv 进行模板匹配
+                    res = cv2.matchTemplate(screen_img, anchor_img, cv2.TM_CCOEFF_NORMED)
+                    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+                    if max_val > 0.8:
+                        # 匹配成功，计算全局坐标 (图标中心为 30,30 因为锚点是 60x60)
+                        rect_data = self.wm.get_window_rect()
+                        base_x = rect_data["left"] if rect_data else 0
+                        base_y = rect_data["top"] if rect_data else 0
+                        
+                        tx = base_x + max_loc[0] + 30
+                        ty = base_y + max_loc[1] + 30
+                        
+                        print(f"[SKILL] 视觉锚点(图标)匹配成功! Score: {max_val:.2f} -> 点击: ({tx}, {ty})")
+                        import win32api, win32con
+                        win32api.SetCursorPos((int(tx), int(ty)))
+                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+                        time.sleep(0.05)
+                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+                        return True
+
+        # 1. 尝试语义定位 (OCR)
+        if keywords:
+            view_path = self.action_screenshot("smart_search")
+            img = cv2.imread(view_path)
+            if img is not None:
+                context = self.ocr.read_screen(img)
+                best_ax, best_ay = -1, -1
+                min_dist = 9999
+                for line in context.split('\n'):
+                    if any(k.lower() in line.lower() for k in keywords):
+                        try:
+                            parts = line.split("坐标: (")[1].split(")")[0].split(",")
+                            ax, ay = int(parts[0]), int(parts[1])
+                            # 计算与预期录制位置的相对距离
+                            dist = ((ax - rel_x)**2 + (ay - rel_y)**2)**0.5
+                            if dist < min_dist:
+                                min_dist = dist
+                                best_ax, best_ay = ax, ay
+                        except: continue
+                
+                # 如果偏差在 120 像素内，认为语义目标正确
+                if best_ay != -1 and min_dist < 120:
+                    rect_data = self.wm.get_window_rect()
+                    base_x = rect_data["left"] if rect_data else 0
+                    base_y = rect_data["top"] if rect_data else 0
+                    tx, ty = base_x + best_ax, base_y + best_ay + offset_y
+                    
+                    print(f"[SKILL] 语义地标(文字)对位成功! 偏差 {min_dist:.1f}px -> 点击: ({tx}, {ty})")
+                    import win32api, win32con
+                    win32api.SetCursorPos((int(tx), int(ty)))
+                    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+                    time.sleep(0.05)
+                    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+                    return True
+
+        # 2. 兜底方案：物理相对坐标
+        rect_data = self.wm.get_window_rect()
+        if rect_data:
+            tx = rect_data["left"] + rel_x
+            ty = rect_data["top"] + rel_y + offset_y
+            print(f"[SKILL] 兜底模式 -> DWM 物理点击: ({tx}, {ty})")
+            import win32api, win32con
+            win32api.SetCursorPos((int(tx), int(ty)))
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+            time.sleep(0.05)
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+            return True
+            
+        return False
 
     def action_click_landmark_v2(self, keywords=["Inputs", "Earnings"], search_depth=400, optional=False):
         """原子积木 V2：语义级视觉吸附探测 (实验性方案)"""
@@ -786,6 +909,39 @@ class MSISkills:
         pydirectinput.keyDown('ctrl')
         pydirectinput.press('w')
         pydirectinput.keyUp('ctrl')
+        time.sleep(0.5)
+        return True
+
+    def action_click_raw(self, rel_x, rel_y):
+        """
+        原子积木：相对物理点击 (录制器回退方案)
+        基于对位基准的偏移点击，确保窗口移动后依然有效。
+        """
+        import win32api, win32con, win32gui
+        config = self._load_config()
+        if not config: return False
+        
+        base_x, base_y = config['dock_rect']['x'], config['dock_rect']['y']
+        abs_x, abs_y = base_x + rel_x, base_y + rel_y
+        
+        print(f"[SKILL] 执行物理点击: ({abs_x}, {abs_y}) [Rel: {rel_x}, {rel_y}]")
+        
+        # 强制激活窗口确保点击有效
+        hwnd = win32gui.FindWindow(None, self.agent.profile_name)
+        if hwnd:
+            try:
+                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                win32gui.SetForegroundWindow(hwnd)
+                time.sleep(0.3)
+            except: pass
+
+        for _ in range(2):
+            win32api.SetCursorPos((int(abs_x), int(abs_y)))
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+            time.sleep(0.05)
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+            time.sleep(0.1)
+        
         time.sleep(0.5)
         return True
 

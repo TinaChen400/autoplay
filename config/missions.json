@@ -1,24 +1,1536 @@
 {
-  "current_mission": "Tina 评分任务",
+  "current_mission": "444",
   "missions": {
     "图片打分任务": [
       {
         "name": "1. 识别并点击小图",
         "action": "action_click_landmark",
-        "params": {"keywords": ["inputs", "input", "source"]},
+        "params": {
+          "keywords": [
+            "inputs",
+            "input",
+            "source"
+          ]
+        },
         "description": "寻找 Inputs 文字并定位下方图片中心"
       },
       {
         "name": "2. 注入方向键序列",
         "action": "action_press_keys",
-        "params": {"keys": ["down", "right", "left", "up"]},
+        "params": {
+          "keys": [
+            "down",
+            "right",
+            "left",
+            "up"
+          ]
+        },
         "description": "物理穿透注入按键流，遍历所有对比图"
       },
       {
         "name": "7. 最终截图存档",
         "action": "action_screenshot",
-        "params": {"label": "result_final"},
+        "params": {
+          "label": "result_final"
+        },
         "description": "保存当前屏幕状态作为任务成果"
+      },
+      {
+        "name": "等待 1.7s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.7
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Responsed'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Responsed"
+          ],
+          "rel_x": 1164,
+          "rel_y": 788,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Responsed)"
+      },
+      {
+        "name": "等待 1.6s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.6
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1353, 784)",
+        "action": "action_click_raw",
+        "params": {
+          "rel_x": 1353,
+          "rel_y": 784
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 1.6s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.6
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Responsa 8'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Responsa 8"
+          ],
+          "rel_x": 1159,
+          "rel_y": 734,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Responsa 8)"
+      },
+      {
+        "name": "等待 4.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 4.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Resnonse'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Resnonse"
+          ],
+          "rel_x": 1157,
+          "rel_y": 788,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Resnonse)"
+      },
+      {
+        "name": "等待 3.7s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.7
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Response 8'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Response 8"
+          ],
+          "rel_x": 1225,
+          "rel_y": 765,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Response 8)"
+      },
+      {
+        "name": "等待 1.9s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.9
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Rosponsg 8'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Rosponsg 8"
+          ],
+          "rel_x": 1154,
+          "rel_y": 660,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Rosponsg 8)"
+      },
+      {
+        "name": "等待 3.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1219, 732)",
+        "action": "action_click_raw",
+        "params": {
+          "rel_x": 1219,
+          "rel_y": 732
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 2.7s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.7
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Response 8'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Response 8"
+          ],
+          "rel_x": 1149,
+          "rel_y": 708,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Response 8)"
+      },
+      {
+        "name": "等待 2.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Response A'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Response A"
+          ],
+          "rel_x": 1152,
+          "rel_y": 759,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Response A)"
+      },
+      {
+        "name": "等待 2.1s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.1
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Bom Bao'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Bom Bao"
+          ],
+          "rel_x": 1309,
+          "rel_y": 760,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Bom Bao)"
+      },
+      {
+        "name": "等待 3.4s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.4
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Bg Cood'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Bg Cood"
+          ],
+          "rel_x": 1291,
+          "rel_y": 707,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Bg Cood)"
+      },
+      {
+        "name": "等待 1.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'ResinnseA'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "ResinnseA"
+          ],
+          "rel_x": 1157,
+          "rel_y": 736,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: ResinnseA)"
+      },
+      {
+        "name": "等待 1.1s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.1
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Tponse 8'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Tponse 8"
+          ],
+          "rel_x": 1213,
+          "rel_y": 783,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Tponse 8)"
+      },
+      {
+        "name": "等待 3.1s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.1
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Response 0'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Response 0"
+          ],
+          "rel_x": 1230,
+          "rel_y": 692,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Response 0)"
+      },
+      {
+        "name": "等待 1.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Botlmood'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Botlmood"
+          ],
+          "rel_x": 1298,
+          "rel_y": 732,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Botlmood)"
+      },
+      {
+        "name": "等待 1.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Bollpou'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Bollpou"
+          ],
+          "rel_x": 1299,
+          "rel_y": 782,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Bollpou)"
+      },
+      {
+        "name": "等待 1.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (103, 225)",
+        "action": "action_click_raw",
+        "params": {
+          "rel_x": 103,
+          "rel_y": 225
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 2.6s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.6
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1098, 214)",
+        "action": "action_click_raw",
+        "params": {
+          "rel_x": 1098,
+          "rel_y": 214
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 4.5s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 4.5
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'InIs'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "InIs"
+          ],
+          "rel_x": 94,
+          "rel_y": 236,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: InIs)"
+      },
+      {
+        "name": "等待 3.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Response 8'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Response 8"
+          ],
+          "rel_x": 695,
+          "rel_y": 388,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Response 8)"
+      },
+      {
+        "name": "等待 4.9s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 4.9
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (503, 542)",
+        "action": "action_click_raw",
+        "params": {
+          "rel_x": 503,
+          "rel_y": 542
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 5.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 5.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Bol Bad'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Bol Bad"
+          ],
+          "rel_x": 1414,
+          "rel_y": 664,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Bol Bad)"
+      },
+      {
+        "name": "等待 5.1s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 5.1
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Sarmi Vote'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Sarmi Vote"
+          ],
+          "rel_x": 653,
+          "rel_y": 774,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Sarmi Vote)"
+      },
+      {
+        "name": "等待 3.4s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.4
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Less AIGTcratod'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Less AIGTcratod"
+          ],
+          "rel_x": 112,
+          "rel_y": 716,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Less AIGTcratod)"
+      },
+      {
+        "name": "等待 1.5s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.5
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Resrhed'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Resrhed"
+          ],
+          "rel_x": 1162,
+          "rel_y": 732,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Resrhed)"
+      },
+      {
+        "name": "等待 3.7s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.7
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Response 8'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Response 8"
+          ],
+          "rel_x": 1221,
+          "rel_y": 788,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Response 8)"
+      },
+      {
+        "name": "等待 4.5s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 4.5
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Responsa 8'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Responsa 8"
+          ],
+          "rel_x": 1233,
+          "rel_y": 764,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Responsa 8)"
+      },
+      {
+        "name": "等待 1.4s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.4
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'BoGood'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "BoGood"
+          ],
+          "rel_x": 1293,
+          "rel_y": 810,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: BoGood)"
+      },
+      {
+        "name": "等待 6.0s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 6.0
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Chargs hE'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Chargs hE"
+          ],
+          "rel_x": 99,
+          "rel_y": 288,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Chargs hE)"
+      },
+      {
+        "name": "等待 3.8s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.8
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1087, 212)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 1087,
+          "rel_y": 212
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 3.1s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.1
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Resfonse 8'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Resfonse 8"
+          ],
+          "rel_x": 782,
+          "rel_y": 359,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Resfonse 8)"
+      },
+      {
+        "name": "等待 1.8s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.8
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Resplnse ^'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Resplnse ^"
+          ],
+          "rel_x": 108,
+          "rel_y": 357,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Resplnse ^)"
+      },
+      {
+        "name": "等待 0.8s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 0.8
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (202, 481)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 202,
+          "rel_y": 481
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 2.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'TCEOD'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "TCEOD"
+          ],
+          "rel_x": 1086,
+          "rel_y": 285,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: TCEOD)"
+      },
+      {
+        "name": "等待 1.0s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.0
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Response A'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Response A"
+          ],
+          "rel_x": 1191,
+          "rel_y": 725,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Response A)"
+      },
+      {
+        "name": "等待 1.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'ReJgnse 8'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "ReJgnse 8"
+          ],
+          "rel_x": 1225,
+          "rel_y": 731,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: ReJgnse 8)"
+      },
+      {
+        "name": "等待 1.1s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.1
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Respqno B'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Respqno B"
+          ],
+          "rel_x": 1235,
+          "rel_y": 784,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Respqno B)"
+      },
+      {
+        "name": "等待 2.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'ResponseA'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "ResponseA"
+          ],
+          "rel_x": 1152,
+          "rel_y": 741,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: ResponseA)"
+      },
+      {
+        "name": "等待 1.9s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.9
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'RespoIA 8'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "RespoIA 8"
+          ],
+          "rel_x": 1239,
+          "rel_y": 783,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: RespoIA 8)"
+      },
+      {
+        "name": "等待 4.4s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 4.4
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (127, 478)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 127,
+          "rel_y": 478
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 6.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 6.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'RelpnseA'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "RelpnseA"
+          ],
+          "rel_x": 1152,
+          "rel_y": 703,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: RelpnseA)"
+      },
+      {
+        "name": "等待 1.7s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.7
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Responsln'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Responsln"
+          ],
+          "rel_x": 1246,
+          "rel_y": 756,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Responsln)"
+      },
+      {
+        "name": "等待 2.9s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.9
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Sbm  ole'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Sbm  ole"
+          ],
+          "rel_x": 674,
+          "rel_y": 779,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Sbm  ole)"
+      },
+      {
+        "name": "等待 2.8s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.8
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Change hrtirc'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Change hrtirc"
+          ],
+          "rel_x": 119,
+          "rel_y": 362,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Change hrtirc)"
+      },
+      {
+        "name": "等待 2.9s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.9
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1097, 214)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 1097,
+          "rel_y": 214
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 1.5s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.5
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Respolie'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Respolie"
+          ],
+          "rel_x": 1235,
+          "rel_y": 731,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Respolie)"
+      },
+      {
+        "name": "等待 2.0s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.0
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (879, 487)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 879,
+          "rel_y": 487
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 1.7s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.7
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1089, 208)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 1089,
+          "rel_y": 208
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 1.6s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.6
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Change n'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Change n"
+          ],
+          "rel_x": 93,
+          "rel_y": 285,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Change n)"
+      },
+      {
+        "name": "等待 1.0s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.0
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (349, 545)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 349,
+          "rel_y": 545
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 2.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1086, 208)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 1086,
+          "rel_y": 208
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 0.8s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 0.8
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1013, 468)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 1013,
+          "rel_y": 468
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 1.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1089, 209)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 1089,
+          "rel_y": 209
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 8.8s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 8.8
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "按键操作: ENTER",
+        "action": "action_press_keys",
+        "params": {
+          "keys": [
+            "enter"
+          ]
+        },
+        "description": "手动录制的键盘操作: enter"
+      },
+      {
+        "name": "等待 1.4s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.4
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Respled'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Respled"
+          ],
+          "rel_x": 1161,
+          "rel_y": 755,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Respled)"
+      },
+      {
+        "name": "等待 1.4s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.4
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (297, 450)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 297,
+          "rel_y": 450
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 2.1s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.1
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'TceTIIur7'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "TceTIIur7"
+          ],
+          "rel_x": 1091,
+          "rel_y": 284,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: TceTIIur7)"
+      },
+      {
+        "name": "相对点击 (1047, 453)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 1047,
+          "rel_y": 453
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 1.5s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.5
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1086, 212)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 1086,
+          "rel_y": 212
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "点击文字 'Changs nert'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Changs nert"
+          ],
+          "rel_x": 108,
+          "rel_y": 275,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Changs nert)"
+      },
+      {
+        "name": "等待 1.6s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.6
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1097, 208)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 1097,
+          "rel_y": 208
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 73.8s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 73.8
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "按键操作: ENTER",
+        "action": "action_press_keys",
+        "params": {
+          "keys": [
+            "enter"
+          ]
+        },
+        "description": "手动录制的键盘操作: enter"
+      },
+      {
+        "name": "等待 215.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 215.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "按键操作: ENTER",
+        "action": "action_press_keys",
+        "params": {
+          "keys": [
+            "enter"
+          ]
+        },
+        "description": "手动录制的键盘操作: enter"
+      },
+      {
+        "name": "等待 1.1s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.1
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1005, 533)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 1005,
+          "rel_y": 533
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 9.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 9.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1093, 217)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 1093,
+          "rel_y": 217
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 2.7s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.7
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'ReImnse 0'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "ReImnse 0"
+          ],
+          "rel_x": 1224,
+          "rel_y": 731,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: ReImnse 0)"
+      },
+      {
+        "name": "等待 4.6s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 4.6
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Rponse 8'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Rponse 8"
+          ],
+          "rel_x": 1217,
+          "rel_y": 785,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Rponse 8)"
+      },
+      {
+        "name": "等待 4.0s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 4.0
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (114, 373)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 114,
+          "rel_y": 373
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 5.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 5.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1089, 213)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 1089,
+          "rel_y": 213
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 4.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 4.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (81, 734)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 81,
+          "rel_y": 734
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 3.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Onqi Elo'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Onqi Elo"
+          ],
+          "rel_x": 77,
+          "rel_y": 224,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Onqi Elo)"
+      },
+      {
+        "name": "等待 2.7s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.7
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (463, 329)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 463,
+          "rel_y": 329
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 5.8s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 5.8
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Both 0a0'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Both 0a0"
+          ],
+          "rel_x": 1418,
+          "rel_y": 675,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Both 0a0)"
+      },
+      {
+        "name": "等待 3.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Submi Vote'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Submi Vote"
+          ],
+          "rel_x": 646,
+          "rel_y": 779,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Submi Vote)"
+      },
+      {
+        "name": "等待 2.0s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.0
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'New Comparson'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "New Comparson"
+          ],
+          "rel_x": 794,
+          "rel_y": 781,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: New Comparson)"
       }
     ],
     "Tina 评分任务": {
@@ -27,56 +1539,87 @@
         {
           "name": "0. 检查并清理弹窗广告",
           "action": "action_click_landmark",
-          "params": {"keywords": ["取消", "开通会员"], "optional": true},
+          "params": {
+            "keywords": [
+              "取消",
+              "开通会员"
+            ],
+            "optional": true
+          },
           "description": "如果发现向日葵广告弹窗，自动将其关闭"
         },
         {
           "name": "1. 首页截图拍照",
           "action": "action_screenshot",
-          "params": {"label": "top"},
+          "params": {
+            "label": "top"
+          },
           "description": "拍摄页面顶部的证据快照"
         },
         {
           "name": "2. 强力对角并滚动到底部",
           "action": "action_scroll_home_end",
-          "params": {"direction": "end"},
+          "params": {
+            "direction": "end"
+          },
           "description": "内容区地标对焦+连发滚动连招"
         },
         {
           "name": "3. 底部截图拍照",
           "action": "action_screenshot",
-          "params": {"label": "bottom"},
+          "params": {
+            "label": "bottom"
+          },
           "description": "拍摄页面底部的证据快照"
         },
         {
           "name": "4. 返回页面顶部",
           "action": "action_scroll_home_end",
-          "params": {"direction": "home"},
+          "params": {
+            "direction": "home"
+          },
           "description": "回到顶部准备定位操作"
         },
         {
           "name": "5. 内容唤醒并点击 Inputs",
           "action": "action_click_landmark_v2",
-          "params": {"keywords": ["Omni", "Inputs", "Guidelines", "Earnings"]},
+          "params": {
+            "keywords": [
+              "Omni",
+              "Inputs",
+              "Guidelines",
+              "Earnings"
+            ]
+          },
           "description": "增强环境自愈：如果身处 Earnings 页面，以此为锚点强行切回任务页"
         },
         {
           "name": "5.5 加载延时缓冲",
           "action": "action_sleep",
-          "params": {"seconds": 3.0},
+          "params": {
+            "seconds": 3.0
+          },
           "description": "确保页面渲染稳定后再进行按键操作"
         },
         {
           "name": "6. 内部视图导航",
           "action": "action_press_keys",
-          "params": {"keys": ["down", "right"]},
+          "params": {
+            "keys": [
+              "down",
+              "right"
+            ]
+          },
           "description": "方向键触发 Response A/B 视图"
         },
         {
           "name": "7. 暴力巡航 Response A",
           "action": "action_zoom_pan_reset",
           "params": {
-            "landmark_keywords": ["Response A", "Response"],
+            "landmark_keywords": [
+              "Response A",
+              "Response"
+            ],
             "scroll_amount": 15,
             "pan_dx": 180,
             "pan_dy": 100
@@ -87,7 +1630,10 @@
           "name": "8. 暴力巡航 Response B",
           "action": "action_zoom_pan_reset",
           "params": {
-            "landmark_keywords": ["Response B", "Response"],
+            "landmark_keywords": [
+              "Response B",
+              "Response"
+            ],
             "scroll_amount": 15,
             "pan_dx": -180,
             "pan_dy": 100
@@ -95,6 +1641,1032 @@
           "description": "15倍暴力缩放+大跨度平移巡航"
         }
       ]
-    }
+    },
+    "111": [
+      {
+        "name": "等待 12.4s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 12.4
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (111, 327)",
+        "action": "action_click_raw",
+        "params": {
+          "rel_x": 111,
+          "rel_y": 327
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 4.5s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 4.5
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1098, 214)",
+        "action": "action_click_raw",
+        "params": {
+          "rel_x": 1098,
+          "rel_y": 214
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 9.6s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 9.6
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Ra-rnrse'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Ra-rnrse"
+          ],
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木"
+      },
+      {
+        "name": "等待 3.5s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.5
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'BolGood'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "BolGood"
+          ],
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木"
+      },
+      {
+        "name": "等待 2.1s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.1
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Ro ILC'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Ro ILC"
+          ],
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木"
+      },
+      {
+        "name": "等待 2.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Bol Gj'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Bol Gj"
+          ],
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木"
+      },
+      {
+        "name": "等待 9.7s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 9.7
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'CUSDOISC'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "CUSDOISC"
+          ],
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木"
+      },
+      {
+        "name": "等待 3.5s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.5
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Se'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Se"
+          ],
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木"
+      },
+      {
+        "name": "等待 3.6s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.6
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'ResF5'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "ResF5"
+          ],
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木"
+      },
+      {
+        "name": "等待 1.4s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.4
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Suh'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Suh"
+          ],
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木"
+      },
+      {
+        "name": "等待 3.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Chng'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Chng"
+          ],
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木 (精准模式)"
+      },
+      {
+        "name": "等待 2.6s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.6
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1093, 213)",
+        "action": "action_click_raw",
+        "params": {
+          "rel_x": 1093,
+          "rel_y": 213
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 16.5s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 16.5
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Rosponsy'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Rosponsy"
+          ],
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木 (精准模式)"
+      },
+      {
+        "name": "等待 2.7s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.7
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Respons'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Respons"
+          ],
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木 (精准模式)"
+      },
+      {
+        "name": "等待 2.4s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.4
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Bol Good'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Bol Good"
+          ],
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木 (精准模式)"
+      },
+      {
+        "name": "等待 2.0s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.0
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Rasponge+'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Rasponge+"
+          ],
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木 (精准模式)"
+      },
+      {
+        "name": "等待 7.5s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 7.5
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Chng  nerti'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Chng  nerti"
+          ],
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木 (精准模式)"
+      },
+      {
+        "name": "等待 2.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1091, 212)",
+        "action": "action_click_raw",
+        "params": {
+          "rel_x": 1091,
+          "rel_y": 212
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 10.8s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 10.8
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Ruspohs』'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Ruspohs』"
+          ],
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木 (精准模式)"
+      },
+      {
+        "name": "等待 2.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Bol Good'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Bol Good"
+          ],
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木 (精准模式)"
+      },
+      {
+        "name": "等待 1.8s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.8
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Bot Coo'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Bot Coo"
+          ],
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木 (精准模式)"
+      },
+      {
+        "name": "等待 1.1s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.1
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Rospol'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Rospol"
+          ],
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木 (精准模式)"
+      },
+      {
+        "name": "等待 0.8s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 0.8
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'BmGood'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "BmGood"
+          ],
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木 (精准模式)"
+      },
+      {
+        "name": "等待 0.7s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 0.7
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Rasron'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Rasron"
+          ],
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木 (精准模式)"
+      },
+      {
+        "name": "等待 1.1s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.1
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Submt Vote'",
+        "action": "action_click_landmark",
+        "params": {
+          "keywords": [
+            "Submt Vote"
+          ],
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器自动生成的语义地标积木 (精准模式)"
+      }
+    ],
+    "222": [
+      {
+        "name": "等待 3.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Chnge hertire'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Chnge hertire"
+          ],
+          "rel_x": 117,
+          "rel_y": 285,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Chnge hertire)"
+      },
+      {
+        "name": "等待 4.6s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 4.6
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1090, 211)",
+        "action": "action_click_raw",
+        "params": {
+          "rel_x": 1090,
+          "rel_y": 211
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 12.5s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 12.5
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Rosponsg 8'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Rosponsg 8"
+          ],
+          "rel_x": 1159,
+          "rel_y": 663,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Rosponsg 8)"
+      },
+      {
+        "name": "等待 3.5s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.5
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Bol Bao'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Bol Bao"
+          ],
+          "rel_x": 1297,
+          "rel_y": 716,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Bol Bao)"
+      },
+      {
+        "name": "等待 9.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 9.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'RosponseA'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "RosponseA"
+          ],
+          "rel_x": 1229,
+          "rel_y": 581,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: RosponseA)"
+      },
+      {
+        "name": "等待 2.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Bol Goou'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Bol Goou"
+          ],
+          "rel_x": 1296,
+          "rel_y": 623,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Bol Goou)"
+      },
+      {
+        "name": "等待 5.4s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 5.4
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Response e'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Response e"
+          ],
+          "rel_x": 1311,
+          "rel_y": 672,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Response e)"
+      },
+      {
+        "name": "等待 2.4s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.4
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Bol'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Bol"
+          ],
+          "rel_x": 1238,
+          "rel_y": 723,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Bol)"
+      },
+      {
+        "name": "等待 1.8s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.8
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'New'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "New"
+          ],
+          "rel_x": 651,
+          "rel_y": 777,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: New)"
+      }
+    ],
+    "333": [
+      {
+        "name": "等待 1.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Responsa 8'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Responsa 8"
+          ],
+          "rel_x": 1161,
+          "rel_y": 739,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Responsa 8)"
+      },
+      {
+        "name": "等待 20.7s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 20.7
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "按键操作: ENTER",
+        "action": "action_press_keys",
+        "params": {
+          "keys": [
+            "enter"
+          ]
+        },
+        "description": "手动录制的键盘操作: enter"
+      }
+    ],
+    "444": [
+      {
+        "name": "等待 1.7s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.7
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'CUIgLICI UI'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "CUIgLICI UI"
+          ],
+          "rel_x": 115,
+          "rel_y": 368,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: CUIgLICI UI)"
+      },
+      {
+        "name": "等待 4.4s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 4.4
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1090, 208)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 1090,
+          "rel_y": 208
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 3.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 3.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (531, 545)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 531,
+          "rel_y": 545
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 2.0s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.0
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1091, 284)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 1091,
+          "rel_y": 284
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 1.2s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.2
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (986, 571)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 986,
+          "rel_y": 571
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 2.6s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.6
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "相对点击 (1086, 209)",
+        "action": "action_click_smart",
+        "params": {
+          "rel_x": 1086,
+          "rel_y": 209
+        },
+        "description": "未检测到语义地标，回退至物理坐标"
+      },
+      {
+        "name": "等待 5.9s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 5.9
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Bolh Bad'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Bolh Bad"
+          ],
+          "rel_x": 1416,
+          "rel_y": 721,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Bolh Bad)"
+      },
+      {
+        "name": "等待 6.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 6.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'RespcIre'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "RespcIre"
+          ],
+          "rel_x": 1165,
+          "rel_y": 472,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: RespcIre)"
+      },
+      {
+        "name": "等待 2.1s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.1
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'BolGoou'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "BolGoou"
+          ],
+          "rel_x": 1297,
+          "rel_y": 525,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: BolGoou)"
+      },
+      {
+        "name": "等待 2.1s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.1
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Ro onsg 8'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Ro onsg 8"
+          ],
+          "rel_x": 1227,
+          "rel_y": 574,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Ro onsg 8)"
+      },
+      {
+        "name": "等待 1.8s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.8
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Rosponse'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Rosponse"
+          ],
+          "rel_x": 1177,
+          "rel_y": 577,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Rosponse)"
+      },
+      {
+        "name": "等待 6.0s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 6.0
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Respolle e'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Respolle e"
+          ],
+          "rel_x": 1242,
+          "rel_y": 625,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Respolle e)"
+      },
+      {
+        "name": "等待 2.9s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.9
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Rosponsy 巳'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Rosponsy 巳"
+          ],
+          "rel_x": 1244,
+          "rel_y": 675,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Rosponsy 巳)"
+      },
+      {
+        "name": "等待 1.9s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.9
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'Response 0'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "Response 0"
+          ],
+          "rel_x": 1230,
+          "rel_y": 725,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: Response 0)"
+      },
+      {
+        "name": "等待 1.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 1.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'SbmVote'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "SbmVote"
+          ],
+          "rel_x": 672,
+          "rel_y": 779,
+          "offset_y": 0,
+          "optional": true
+        },
+        "description": "录制器产生的混合对位积木 (Text: SbmVote)"
+      }
+    ]
   }
 }
