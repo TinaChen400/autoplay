@@ -1,6 +1,28 @@
 {
-  "current_mission": "444",
+  "current_mission": "AI 协同决策任务",
   "missions": {
+    "AI 协同决策任务": [
+      {
+        "name": "1. 投喂豆包/GPT",
+        "action": "action_llm_send",
+        "params": {},
+        "description": "截取 Tina 屏幕并全自动投喂给本地大模型"
+      },
+      {
+        "name": "2. 等待 AI 思考 (15s)",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 15
+        },
+        "description": "等待大模型生成最终 A/B 结论"
+      },
+      {
+        "name": "3. 抓取决策并点击",
+        "action": "action_llm_extract_click",
+        "params": {},
+        "description": "从屏幕抓取 A/B 结果并切回被控桌面点击"
+      }
+    ],
     "图片打分任务": [
       {
         "name": "1. 识别并点击小图",

@@ -5,6 +5,9 @@ import cv2
 import time
 import numpy as np
 import mss
+import win32gui
+import win32con
+import win32api
 
 sys.path.append(r"D:/Dev/autoplay")
 from src.utils.vision import VisionCapture
@@ -14,18 +17,84 @@ from src.utils.hardware_manager import HardwareManager
 from src.utils.layout_parser import LayoutParser
 
 from src.utils.window_lock import WindowManager
+from src.tasks.skill_gpt_oracle import GPTOracle
 
 class MSISkills:
     """
-    MSI 原子技能积木库 (V14 Lego Edition)
+    MSI 原子技能积木库 (V27: LLM Integrated)
     """
-    def __init__(self):
+    def __init__(self, bridge=None):
+        self.bridge = bridge
         self.agent = RemoteAgent()
         self.vc = VisionCapture()
         self.ocr = OCRReader()
         self.records_dir = r"D:/Dev/autoplay/records"
         self.hw = HardwareManager()
         self.wm = WindowManager(["Tina", "MSI"])
+        self.oracle = GPTOracle(bridge=bridge) 
+
+    def action_llm_send(self, prompt=None):
+        """
+        步骤 1: 投喂截图与指令至豆包/GPT (V28.3)
+        """
+        if prompt is None:
+            # 使用默认提示词
+            prompt = self.oracle.system_prompt
+            
+        print("[SKILL] 正在投喂 UI 截图与指令至豆包/GPT...")
+        
+        # 1. 物理位置准备 (加载当前 Tina 坐标)
+        config = self._load_config()
+        if not config or "dock_rect" not in config:
+            print("[SKILL] 错误: 未校准 Dock 坐标，无法截图")
+            return False
+            
+        dock_rect = config["dock_rect"]
+        
+        # 2. 截图并存入剪贴板
+        if not self.oracle.action_capture_to_clipboard(dock_rect):
+            return False
+            
+        # 3. 唤起浏览器并发送
+        if not self.oracle.action_focus_gpt_window():
+            return False
+            
+        if not self.oracle.action_send_to_gpt(prompt):
+            return False
+        return True
+
+    def action_llm_extract_click(self):
+        """
+        步骤 2: 抓取 LLM 结果并执行点击 (V28.1 优化版)
+        """
+        print("[SKILL] 启动视觉提取引擎...")
+        decision = self.oracle.action_extract_decision(self.ocr)
+        
+        # 立即反馈至 UI
+        if self.bridge:
+            for step in self.bridge.steps:
+                if step.methodName == "action_llm_extract_click":
+                    step.result_data = f"{decision}" if decision else "识别失败"
+                    break
+            
+            # 强制通知 UI 刷新
+            if hasattr(self.bridge, 'on_step_added_cb') and self.bridge.on_step_added_cb: 
+                self.bridge.on_step_added_cb()
+
+        if not decision:
+            print("[SKILL] LLM 未能给出有效决策")
+        # 这里的决策 A/B 需要映射到 action_click_smart 的关键字
+        keyword = f"Response {decision}"
+        print(f"[SKILL] GPT 最终决策: {decision} -> 尝试点击 '{keyword}'")
+        
+        # 自动切换回 Tina 窗口 (通过 WindowManager)
+        hwnd = win32gui.FindWindow(None, "Tina")
+        if hwnd:
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+            win32gui.SetForegroundWindow(hwnd)
+            time.sleep(0.5)
+            
+        return self.action_click_smart(keywords=[keyword])
 
     def _save_dock_rect(self, x, y, w, h):
         """由 UI 实时调用的同步接口，更新物理对位基准"""

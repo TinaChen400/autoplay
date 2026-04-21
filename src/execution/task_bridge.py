@@ -16,13 +16,14 @@ class TaskStep:
         self.params = params
         self.description = description
         self.status = "idle" # idle, running, success, failed
+        self.result_data = "" # 用于存放过程结果（如 AI 决策词）
 
 class TaskBridge:
     """
     V14 积木化任务驱动引擎：动态解析 JSON 蓝图并调度原子技能。
     """
     def __init__(self):
-        self.skills = MSISkills()
+        self.skills = MSISkills(bridge=self)
         self.config_path = r"D:/Dev/autoplay/config/missions.json"
         self.debug_log = r"D:/Dev/autoplay/records/hud_debug.log"
         self.steps: List[TaskStep] = []
@@ -110,7 +111,10 @@ class TaskBridge:
                 error_msg = traceback.format_exc()
                 self._log(f"[THREAD] 崩溃异常:\n{error_msg}")
                 step.status = "failed"
-            if callback: callback()
+            finally:
+                if callback: callback()
+                # 显式补丁：触发 UI 通告
+                if self.on_step_added_cb: self.on_step_added_cb()
 
         t = threading.Thread(target=_worker, daemon=True)
         t.start()

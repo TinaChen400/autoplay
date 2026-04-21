@@ -45,7 +45,7 @@ class FlowStepCard(QFrame):
         layout = QVBoxLayout(self); layout.setContentsMargins(10, 8, 10, 8); layout.setSpacing(5)
         
         h_header = QHBoxLayout()
-        self.status_ball = QFrame(); self.status_ball.setFixedSize(8, 8); self.update_status()
+        self.status_ball = QFrame(); self.status_ball.setFixedSize(8, 8)
         h_header.addWidget(self.status_ball)
         
         self.title = QLabel(name); self.title.setStyleSheet("color: #eee; font-weight: bold; font-size: 11px; border:none;")
@@ -67,9 +67,21 @@ class FlowStepCard(QFrame):
         self.desc_lbl = QLabel(desc); self.desc_lbl.setWordWrap(True); self.desc_lbl.setStyleSheet("color: #888; font-size: 10px; border:none;")
         layout.addWidget(self.desc_lbl)
         
+        # --- 结果展示区 (V27.9) ---
+        self.res_lbl = QLabel(""); self.res_lbl.setStyleSheet("color: #00ff7f; font-weight: bold; font-size: 10px; border:none;")
+        layout.addWidget(self.res_lbl)
+        
+        # 初始刷新：确保所有组件已在上面初始化完毕
+        self.update_status()
+        
     def update_status(self):
         colors = {"idle": "#333", "running": "#ffd700", "success": "#00ff7f", "failed": "#ff4500"}
         self.status_ball.setStyleSheet(f"border-radius: 4px; background-color: {colors.get(self.status, '#333')}; border: none;")
+        
+        # 同时刷新结果文本
+        if self.bridge and 0 <= self.index < len(self.bridge.steps):
+            res_text = self.bridge.steps[self.index].result_data
+            self.res_lbl.setText(f"Result: {res_text}" if res_text else "")
 
     def on_run_clicked(self):
         print(f"[HUD-UI] 执行单步: {self.index}")
@@ -169,7 +181,16 @@ class TaskControlPanel(QWidget):
         self.content_layout.setContentsMargins(0, 0, 0, 0); self.content_layout.setSpacing(12)
         
         self.combo_mission = QComboBox()
-        self.combo_mission.setStyleSheet("QComboBox { color: white; background: #2a2a2e; border: 1px solid #3c3c3c; padding: 6px; }")
+        self.combo_mission.setStyleSheet("""
+            QComboBox { color: white; background: #2a2a2e; border: 1px solid #3c3c3c; padding: 6px; }
+            QComboBox QAbstractItemView {
+                background-color: #1a1a1e;
+                color: white;
+                selection-background-color: #00ff7f;
+                selection-color: black;
+                border: 1px solid #3c3c3c;
+            }
+        """)
         self.combo_mission.currentIndexChanged.connect(self.on_mission_change)
         
         # 任务控制工具栏 (V6 增强)
@@ -437,7 +458,7 @@ class DualHUDLauncher:
     def __init__(self):
         self.app = QApplication(sys.argv)
         self.bridge = TaskBridge()
-        self.wm = WindowManager(["Tina", "Multimango", "Mango", "Chrome", "MSI", "SOURCE"])
+        self.wm = WindowManager(["Tina", "Multimango", "Mango", "MSI"])
         
         self.overlay = BorderOverlay(self.wm, self.bridge)
         self.panel = TaskControlPanel(self.bridge)
