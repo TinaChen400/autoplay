@@ -8,6 +8,7 @@ import mss
 import win32gui
 import win32con
 import win32api
+import random
 
 sys.path.append(r"D:/Dev/autoplay")
 from src.utils.vision import VisionCapture
@@ -494,16 +495,16 @@ class MSISkills:
         print("[SKILL] 画面监测超时，未发现预期变化。")
         return False
 
-    def action_press_keys(self, keys=["down"]):
-        """原子积木：按键序列注入"""
-        print(f"[SKILL] 注入按键: {keys}")
+    def action_press_keys(self, keys=["down"], interval=0.5):
+        """原子积木：按键序列注入 (由 Agent 处理随机间隔)"""
+        print(f"[SKILL] 注入按键: {keys}, 预设间隔: {interval}")
         config = self._load_config()
         if config:
             data = config['dock_rect']
             cx, cy = data['x'] + data['width'] // 2, data['y'] + data['height'] // 2
             self.agent.double_click_at(cx, cy)
             time.sleep(0.5)
-        self.agent.press_key_sequence(keys, interval=0.5, hold_time=0.15)
+        self.agent.press_key_sequence(keys, interval=interval, hold_time=0.15)
         return True
 
     def action_zoom_pan_reset(self, landmark_keywords=["ref"], scroll_amount=15,
@@ -540,7 +541,7 @@ class MSISkills:
         ax, ay = -1, -1
         # 预加载容错关键词：针对常见的 OCR 误读进行静默增强
         if any(k.lower() in ["response", "response a", "response b"] for k in landmark_keywords):
-            landmark_keywords = list(set(landmark_keywords + ["rosponse", "respon", "rospon", "rosponse a", "rosponse b"]))
+            landmark_keywords = list(set(landmark_keywords + ["rosponse", "respon", "rospon", "rosponse a", "rosponse b", "rbbponse", "rason", "roso"]))
 
         for line in context.split('\n'):
             if any(k.lower() in line.lower() for k in landmark_keywords):
@@ -559,8 +560,9 @@ class MSISkills:
                 except: continue
 
         if ay == -1:
-            print(f"[SKILL] 错误: 没能抓拍到地标 {landmark_keywords}")
-            return False
+            print(f"[SKILL] 警告: 未能发现地标 {landmark_keywords}，启用中心点对焦兜底。")
+            config = self._load_config()
+            ax, ay = config['dock_rect']['width'] // 2, config['dock_rect']['height'] // 2
 
         config = self._load_config()
         if not config: return False
@@ -568,8 +570,19 @@ class MSISkills:
         base_y = config['dock_rect']['y']
 
         # --- 最终物理内核执行序列 ---
+        actual_scroll = scroll_amount
+        if isinstance(scroll_amount, str) and "-" in scroll_amount:
+            try:
+                min_s, max_s = map(int, scroll_amount.split("-"))
+                actual_scroll = random.randint(min_s, max_s)
+            except: pass
+        elif isinstance(scroll_amount, list) and len(scroll_amount) == 2:
+            try:
+                actual_scroll = random.randint(int(scroll_amount[0]), int(scroll_amount[1]))
+            except: pass
+
         target_x, target_y = int(base_x + ax), int(base_y + ay + 250)
-        print(f"[SKILL] 执行 Win32 物理对焦 ({target_x}, {target_y}) 与缩放 x{scroll_amount}")
+        print(f"[SKILL] 执行 Win32 物理对焦 ({target_x}, {target_y}) 与缩放 x{actual_scroll}")
         
         for _ in range(3):
             win32api.SetCursorPos((target_x, target_y))
@@ -578,8 +591,10 @@ class MSISkills:
             win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
             time.sleep(0.1)
 
-        for _ in range(scroll_amount):
-            win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, 120, 0)
+        for _ in range(abs(actual_scroll)):
+            # 根据正负号决定方向 (120 为向上/放大, -120 为向下/缩小)
+            direction = 120 if actual_scroll > 0 else -120
+            win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, direction, 0)
             time.sleep(0.05)
         time.sleep(0.6)
 
@@ -605,6 +620,27 @@ class MSISkills:
                 win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
                 time.sleep(0.05)
 
+        return True
+
+    def action_zoom(self, amount=5):
+        """原子积木：纯粹的物理滚轮缩放 (支持随机)"""
+        actual_amount = amount
+        if isinstance(amount, str) and "-" in amount:
+            try:
+                min_a, max_a = map(int, amount.split("-"))
+                actual_amount = random.randint(min_a, max_a)
+            except: pass
+        elif isinstance(amount, list) and len(amount) == 2:
+            try:
+                actual_amount = random.randint(int(amount[0]), int(amount[1]))
+            except: pass
+            
+        print(f"[SKILL] 执行物理缩放: {actual_amount}")
+        import win32api, win32con
+        direction = 120 if actual_amount > 0 else -120
+        for _ in range(abs(actual_amount)):
+            win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, direction, 0)
+            time.sleep(0.05)
         return True
 
     def action_source_navigate_zoom_circle(self,
@@ -1015,7 +1051,18 @@ class MSISkills:
         return True
 
     def action_sleep(self, seconds=3.0):
-        """原子积木：简单的固定延时等待"""
-        print(f"[SKILL] 固定延时等待 {seconds} 秒...")
-        time.sleep(seconds)
+        """原子积木：支持固定或随机延时等待 (V27.5)"""
+        final_seconds = seconds
+        if isinstance(seconds, str) and "-" in seconds:
+            try:
+                min_s, max_s = map(float, seconds.split("-"))
+                final_seconds = random.uniform(min_s, max_s)
+            except: pass
+        elif isinstance(seconds, list) and len(seconds) == 2:
+            try:
+                final_seconds = random.uniform(float(seconds[0]), float(seconds[1]))
+            except: pass
+            
+        print(f"[SKILL] 延时等待 {final_seconds:.2f} 秒...")
+        time.sleep(final_seconds)
         return True

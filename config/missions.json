@@ -1,5 +1,5 @@
 {
-  "current_mission": "AI 协同决策任务",
+  "current_mission": "tt1",
   "missions": {
     "AI 协同决策任务": [
       {
@@ -9,10 +9,10 @@
         "description": "截取 Tina 屏幕并全自动投喂给本地大模型"
       },
       {
-        "name": "2. 等待 AI 思考 (15s)",
+        "name": "2. 等待 AI 思考 (10s)",
         "action": "action_sleep",
         "params": {
-          "seconds": 15
+          "seconds": 10
         },
         "description": "等待大模型生成最终 A/B 结论"
       },
@@ -1619,7 +1619,7 @@
           "name": "5.5 加载延时缓冲",
           "action": "action_sleep",
           "params": {
-            "seconds": 3.0
+            "seconds": "2.0-6.0"
           },
           "description": "确保页面渲染稳定后再进行按键操作"
         },
@@ -1629,8 +1629,10 @@
           "params": {
             "keys": [
               "down",
-              "right"
-            ]
+              "right",
+              "left"
+            ],
+            "interval": "0.5-2.0"
           },
           "description": "方向键触发 Response A/B 视图"
         },
@@ -1642,11 +1644,24 @@
               "Response A",
               "Response"
             ],
-            "scroll_amount": 15,
-            "pan_dx": 180,
-            "pan_dy": 100
+            "scroll_amount": [
+              4,
+              9
+            ],
+            "pan_dx": 80,
+            "pan_dy": 60
           },
-          "description": "15倍暴力缩放+大跨度平移巡航"
+          "description": "对焦并执行初始暴力缩放"
+        },
+        {
+          "name": "7.1 内部视图导航",
+          "action": "action_press_keys",
+          "params": {
+            "keys": [
+              "right"
+            ]
+          },
+          "description": "方向键触发 Response A/B 视图"
         },
         {
           "name": "8. 暴力巡航 Response B",
@@ -1656,11 +1671,152 @@
               "Response B",
               "Response"
             ],
-            "scroll_amount": 15,
-            "pan_dx": -180,
-            "pan_dy": 100
+            "scroll_amount": [
+              3,
+              6
+            ],
+            "pan_dx": -100,
+            "pan_dy": 60
           },
-          "description": "15倍暴力缩放+大跨度平移巡航"
+          "description": "对焦并执行初始暴力缩放"
+        },
+        {
+          "name": "8.1 退出视图 (Esc)",
+          "action": "action_press_keys",
+          "params": {
+            "keys": [
+              "esc"
+            ]
+          },
+          "description": "按下 Esc 键退出当前大图查看模式"
+        },
+        {
+          "name": "8.2 加载延时缓冲",
+          "action": "action_sleep",
+          "params": {
+            "seconds": "12.2-16.4"
+          },
+          "description": "确保页面渲染稳定后再进行按键操作"
+        },
+        {
+          "name": "9. 开启 Response A 详情",
+          "action": "action_click_smart",
+          "params": {
+            "keywords": [
+              "Zoom",
+              "ZoomI",
+              "Detail"
+            ],
+            "rel_x": 736,
+            "rel_y": 463,
+            "optional": true
+          },
+          "description": "点击 Response A 侧边栏的放大镜详情图标"
+        },
+        {
+          "name": "5.5 加载延时缓冲",
+          "action": "action_sleep",
+          "params": {
+            "seconds": "7-13.5"
+          },
+          "description": "确保页面渲染稳定后再进行按键操作"
+        },
+        {
+          "name": "10. 暴力巡航 Response A",
+          "action": "action_zoom_pan_reset",
+          "params": {
+            "landmark_keywords": [
+              "Response A",
+              "Response"
+            ],
+            "scroll_amount": [
+              2,
+              4
+            ],
+            "pan_dx": 20,
+            "pan_dy": 60
+          },
+          "description": "对焦并执行初始暴力缩放"
+        },
+        {
+          "name": "10.1 内部视图导航",
+          "action": "action_press_keys",
+          "params": {
+            "keys": [
+              "right"
+            ]
+          },
+          "description": "方向键触发 Response A/B 视图"
+        },
+        {
+          "name": "10.2 暴力巡航 Response B",
+          "action": "action_zoom_pan_reset",
+          "params": {
+            "landmark_keywords": [
+              "Response B",
+              "Response"
+            ],
+            "scroll_amount": [
+              2.5,
+              3.8
+            ],
+            "pan_dx": 18,
+            "pan_dy": 73
+          },
+          "description": "对焦并执行初始暴力缩放"
+        },
+        {
+          "name": "10.1 内部视图导航",
+          "action": "action_press_keys",
+          "params": {
+            "keys": [
+              "left",
+              "left"
+            ]
+          },
+          "description": "方向键触发 Response A/B 视图"
+        },
+        {
+          "name": "11. 暴力巡航 output",
+          "action": "action_zoom_pan_reset",
+          "params": {
+            "landmark_keywords": [
+              "output"
+            ],
+            "scroll_amount": [
+              1.5,
+              5
+            ],
+            "pan_dx": 14,
+            "pan_dy": 56
+          },
+          "description": "对焦并执行初始暴力缩放"
+        },
+        {
+          "name": "12.1 加载延时缓冲",
+          "action": "action_sleep",
+          "params": {
+            "seconds": "12.2-14.4"
+          },
+          "description": "确保页面渲染稳定后再进行按键操作"
+        },
+        {
+          "name": "12.2 退出视图 (Esc)",
+          "action": "action_press_keys",
+          "params": {
+            "keys": [
+              "esc"
+            ]
+          },
+          "description": "按下 Esc 键退出当前大图查看模式"
+        },
+        {
+          "name": "8.2 加载延时缓冲",
+          "action": "action_sleep",
+          "params": {
+            "seconds": "6.2-7.4"
+          },
+          "description": "确保页面渲染稳定后再进行按键操作"
         }
       ]
     },
@@ -2688,6 +2844,34 @@
           "optional": true
         },
         "description": "录制器产生的混合对位积木 (Text: SbmVote)"
+      }
+    ],
+    "tt1": [
+      {
+        "name": "等待 2.3s",
+        "action": "action_sleep",
+        "params": {
+          "seconds": 2.3
+        },
+        "description": "录制产生的自动延时"
+      },
+      {
+        "name": "点击文字 'OLICKED'",
+        "action": "action_click_smart",
+        "params": {
+          "keywords": [
+            "OLICKED"
+          ],
+          "rel_x": 736,
+          "rel_y": 463,
+          "offset_y": 0,
+          "optional": true,
+          "layout_size": [
+            48,
+            48
+          ]
+        },
+        "description": "录制器产生的混合对位积木 (Text: OLICKED)"
       }
     ]
   }

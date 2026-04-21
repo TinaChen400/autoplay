@@ -26,7 +26,7 @@ class OCRReader:
         
         context_lines = []
         for (bbox, text, prob) in results:
-            if prob < 0.3: continue # 过滤低置信度
+            if prob < 0.1: continue # 过滤极低置信度 (V27 调优版)
             
             # 计算中心点
             center_x = int(np.mean([p[0] for p in bbox]))

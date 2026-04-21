@@ -7,6 +7,7 @@ import win32gui
 import win32api
 import win32con
 import cv2
+import random
 
 # Project paths
 sys.path.append(r"D:\Dev\autoplay")
@@ -143,12 +144,34 @@ class RemoteAgent:
         # 预先激活窗口
         self.activate_window(self.profile_name)
         
-        print(f"ACTION: Executing forceful key sequence: {keys} (Hold: {hold_time}s)")
+        print(f"ACTION: Executing forceful key sequence: {keys}")
         for key in keys:
+            # 随机化按下时间 (Hold Time)
+            actual_hold = hold_time
+            if isinstance(hold_time, (list, tuple)) and len(hold_time) == 2:
+                actual_hold = random.uniform(float(hold_time[0]), float(hold_time[1]))
+            elif isinstance(hold_time, str) and "-" in hold_time:
+                try:
+                    min_h, max_h = map(float, hold_time.split("-"))
+                    actual_hold = random.uniform(min_h, max_h)
+                except: pass
+
             pydirectinput.keyDown(key)
-            time.sleep(hold_time) 
+            time.sleep(actual_hold) 
             pydirectinput.keyUp(key)
-            time.sleep(interval)
+            
+            # 每按一个键都重新计算一次间隔时间，确保不重样 (V28.5)
+            actual_interval = interval
+            if isinstance(interval, (list, tuple)) and len(interval) == 2:
+                actual_interval = random.uniform(float(interval[0]), float(interval[1]))
+            elif isinstance(interval, str) and "-" in interval:
+                try:
+                    min_i, max_i = map(float, interval.split("-"))
+                    actual_interval = random.uniform(min_i, max_i)
+                except: pass
+                
+            print(f"  [KEY] '{key}' pressed (Hold: {actual_hold:.2f}s, Next Interval: {actual_interval:.2f}s)")
+            time.sleep(actual_interval)
 
 if __name__ == "__main__":
     # 演示：一键初始化并执行
