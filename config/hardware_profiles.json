@@ -7,14 +7,14 @@
       "screen_geometry": "1440x2560",
       "calibration": {
         "dock_rect": {
-          "x": 29,
-          "y": 1274,
-          "width": 1527,
+          "x": 28,
+          "y": 1025,
+          "width": 1525,
           "height": 906
         },
         "dpi_offset_y": 140
       },
-      "last_updated": 1776813643.147625
+      "last_updated": 1776863410.2771804
     }
   }
 }

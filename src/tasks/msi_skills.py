@@ -395,9 +395,9 @@ class MSISkills:
 
         # 4. 语义视觉探测 (OpenCV 魔法时间)
         h, w, _ = img.shape
-        # 定义搜索扇区: 文字正下方 400px，左右各扩散 200px
+        # 定义搜索扇区: 文字正下方 600px，右侧大幅扩散至 1000px 以覆盖宽屏图标
         roi_y1, roi_y2 = ay, min(ay + search_depth, h)
-        roi_x1, roi_x2 = max(ax - 50, 0), min(ax + 350, w)
+        roi_x1, roi_x2 = max(ax - 50, 0), min(ax + 1000, w)
         roi = img[roi_y1:roi_y2, roi_x1:roi_x2]
         
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
@@ -411,21 +411,22 @@ class MSISkills:
         for cnt in contours:
             x_c, y_c, w_c, h_c = cv2.boundingRect(cnt)
             area = cv2.contourArea(cnt)
-            # 过滤逻辑：符合图标/卡片大小，且不能太扁或太细
-            if 1000 < area < 40000 and 0.4 < (w_c/h_c) < 2.5:
-                # 计算与锚点文字底边缘的距离（越近越好）
-                dist = y_c 
+            if 200 < area < 50000 and 0.3 < (w_c/h_c) < 3.0:
+                cx, cy = x_c + w_c//2, y_c + h_c//2
+                dist = ((cx - 0)**2 + (cy - 0)**2)**0.5 
                 candidates.append({
-                    'center': (x_c + w_c//2, y_c + h_c//2),
+                    'center': (cx, cy),
                     'dist': dist,
-                    'rect': (x_c, y_c, w_c, h_c)
+                    'rect': (x_c, y_c, w_c, h_c),
+                    'area': area
                 })
                 cv2.rectangle(debug_img, (x_c, y_c), (x_c+w_c, y_c+h_c), (255, 0, 0), 2)
 
         final_tx, final_ty = -1, -1
         if candidates:
-            # 排序寻找最符合“紧邻文字下方”特征的那个块
+            # 排序：距离文字锚点最近的优先
             candidates.sort(key=lambda x: x['dist'])
+            print(f"[SKILL-V2] 发现候选块数量: {len(candidates)}, 最近块距离: {candidates[0]['dist']:.1f}, 面积: {candidates[0]['area']}")
             best = candidates[0]
             final_tx, final_ty = roi_x1 + best['center'][0], roi_y1 + best['center'][1]
             # 视觉反馈回填
@@ -496,15 +497,40 @@ class MSISkills:
         return False
 
     def action_press_keys(self, keys=["down"], interval=0.5):
-        """原子积木：按键序列注入 (由 Agent 处理随机间隔)"""
-        print(f"[SKILL] 注入按键: {keys}, 预设间隔: {interval}")
+        """原子积木：按键序列注入 (支持固定值或范围字符串)"""
+        import random
+        # 1. 解析间隔参数
+        actual_interval = 0.5
+        try:
+            if isinstance(interval, str) and "-" in interval:
+                min_i, max_i = map(float, interval.split("-"))
+                actual_interval = random.uniform(min_i, max_i)
+            else:
+                actual_interval = float(interval)
+        except Exception as e:
+            print(f"[SKILL] 间隔参数解析警告: {e}，使用默认值 0.5")
+            actual_interval = 0.5
+
+        # 2. 增加拟人化随机微调 (0.9x - 1.1x)
+        adj_interval = actual_interval * random.uniform(0.9, 1.1)
+        print(f"[SKILL] 注入按键: {keys}, 最终计算间隔: {adj_interval:.2f}s")
+        
+        # 3. 激活窗口
         config = self._load_config()
         if config:
             data = config['dock_rect']
             cx, cy = data['x'] + data['width'] // 2, data['y'] + data['height'] // 2
-            self.agent.double_click_at(cx, cy)
+            self.agent.activate_window(self.agent.profile_name)
+            time.sleep(0.3)
+            # 在中心点轻微点击以确保焦点
+            import win32api, win32con
+            win32api.SetCursorPos((int(cx), int(cy)))
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+            time.sleep(0.05)
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
             time.sleep(0.5)
-        self.agent.press_key_sequence(keys, interval=interval, hold_time=0.15)
+            
+        self.agent.press_key_sequence(keys, interval=adj_interval, hold_time=random.uniform(0.1, 0.2))
         return True
 
     def action_zoom_pan_reset(self, landmark_keywords=["ref"], scroll_amount=15,
@@ -1050,8 +1076,43 @@ class MSISkills:
         time.sleep(0.5)
         return True
 
+    def action_scan_click(self, rel_x, start_rel_y, end_rel_y, step=15):
+        """
+        原子积木：纵向扫描连点 (针对坐标微偏的顽固按钮)
+        在指定的 X 坐标上，从 start_y 到 end_y 步进点击。
+        """
+        import win32api, win32con
+        config = self._load_config()
+        if not config: return False
+        
+        base_x, base_y = config['dock_rect']['x'], config['dock_rect']['y']
+        abs_x = base_x + rel_x
+        
+        print(f"[SKILL] 启动纵向扫描点击: X={abs_x}, Y={start_rel_y} -> {end_rel_y}")
+        
+        # 激活窗口
+        self.agent.activate_window(self.agent.profile_name)
+        time.sleep(0.3)
+        
+        curr_y = start_rel_y
+        while curr_y <= end_rel_y:
+            abs_y = base_y + curr_y
+            win32api.SetCursorPos((int(abs_x), int(abs_y)))
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+            time.sleep(0.05)
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+            print(f"  [SCAN] Clicked at Y={curr_y}")
+            time.sleep(0.1)
+            curr_y += step
+            
+        return True
+
     def action_sleep(self, seconds=3.0):
-        """原子积木：支持固定或随机延时等待 (V27.5)"""
+        """
+        原子积木：支持固定或随机延时等待 (V28.5 拟人化版)
+        在等待期间会随机模拟人类微动鼠标，增加防检测能力。
+        """
+        import random, time, win32api
         final_seconds = seconds
         if isinstance(seconds, str) and "-" in seconds:
             try:
@@ -1063,6 +1124,74 @@ class MSISkills:
                 final_seconds = random.uniform(float(seconds[0]), float(seconds[1]))
             except: pass
             
-        print(f"[SKILL] 延时等待 {final_seconds:.2f} 秒...")
-        time.sleep(final_seconds)
+        print(f"[SKILL] 延时等待 {final_seconds:.2f} 秒 (拟人微动已开启)...")
+        
+        # 拟人化等待：如果延时较长，则在中间穿插鼠标微动
+        start_time = time.time()
+        while time.time() - start_time < final_seconds:
+            remaining = final_seconds - (time.time() - start_time)
+            if remaining > 2.0 and random.random() < 0.3: # 30% 概率执行一次幽灵微动
+                # 随机选择一个附近的点进行平滑移动
+                curr_x, curr_y = win32api.GetCursorPos()
+                target_x = curr_x + random.randint(-50, 50)
+                target_y = curr_y + random.randint(-50, 50)
+                # 确保不移出主屏幕 (简单检查)
+                target_x = max(0, min(target_x, 1920))
+                target_y = max(0, min(target_y, 1080))
+                
+                self._human_mouse_move(target_x, target_y, duration=random.uniform(0.5, 1.5))
+            
+            time.sleep(min(remaining, 1.0))
+            
         return True
+
+    def action_casual_behavior(self, intensity=1.0):
+        """
+        原子积木：拟人化随机动作 (V28.6 增强版)
+        模拟人类在阅读或思考时的微小动作：随机小幅滚动、随机鼠标位移。
+        :param intensity: 动作强度系数
+        """
+        print(f"[SKILL] 正在执行拟人化随机观察动作 (强度: {intensity})...")
+        import random, time, win32api, win32con
+        
+        # 1. 随机微量滚动 (模拟反复确认内容)
+        scroll_count = random.randint(1, int(3 * intensity))
+        for _ in range(scroll_count):
+            # 随机滚动位移：-150 到 150 之间
+            amount = random.randint(-150, 150)
+            win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, amount, 0)
+            time.sleep(random.uniform(0.2, 0.5))
+        
+        # 2. 随机鼠标晃动 (在任务区域内随机游走)
+        config = self._load_config()
+        if config and "dock_rect" in config:
+            rect = config["dock_rect"]
+            for _ in range(random.randint(1, int(2 * intensity))):
+                tx = rect["x"] + random.randint(100, rect["width"] - 100)
+                ty = rect["y"] + random.randint(100, rect["height"] - 100)
+                self._human_mouse_move(tx, ty, duration=random.uniform(0.6, 1.5))
+                time.sleep(random.uniform(0.2, 0.6))
+        
+        return True
+
+    def _human_mouse_move(self, target_x, target_y, duration=1.0):
+        """
+        [V28 内部工具] 模拟人类非线性、带抖动的鼠标移动轨迹。
+        """
+        try:
+            import math, win32api, time, random
+            start_x, start_y = win32api.GetCursorPos()
+            steps = int(duration * 20) # 20Hz 刷新率
+            if steps < 1: steps = 1
+            
+            for i in range(1, steps + 1):
+                t = i / steps
+                t_eased = t * t * (3 - 2 * t) # Ease-in-out
+                new_x = start_x + (target_x - start_x) * t_eased
+                new_y = start_y + (target_y - start_y) * t_eased
+                noise_x = math.sin(t * math.pi * 2) * random.uniform(0, 2)
+                noise_y = math.cos(t * math.pi * 2) * random.uniform(0, 2)
+                win32api.SetCursorPos((int(new_x + noise_x), int(new_y + noise_y)))
+                time.sleep(duration / steps)
+        except Exception as e:
+            print(f"[INTERNAL] 鼠标微动异常: {e}")

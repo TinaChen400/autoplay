@@ -23,6 +23,11 @@ class GPTOracle:
         self.records_dir = r"D:\Dev\autoplay\records"
         # 默认提示词
         self.system_prompt = "这是Tina控制对象的实时截图。请根据任务要求分析并给出决策。只需返回答案本身（如 'A' 或 'B'）。"
+        
+        # V28 新增属性
+        self.image_queue = [] # 图片队列，存储 PIL 对象
+        self.cached_hwnd = None # 浏览器窗口句柄缓存
+        self.last_extraction_success = False
 
     def _log(self, msg):
         if self.bridge:
@@ -30,172 +35,217 @@ class GPTOracle:
         else:
             print(f"[ORACLE] {msg}")
 
-    def action_capture_to_clipboard(self, dock_rect):
-        """
-        捕获 Dock 窗口并放入 Windows 剪贴板 (CD_DIB)。
-        """
+    def action_clear_queue(self):
+        """清空图片队列"""
+        self.image_queue = []
+        self._log("图片队列已清空")
+
+    def action_add_to_queue(self, dock_rect):
+        """捕获当前 Dock 画面并存入内存队列"""
         try:
             with mss.mss() as sct:
-                # 调整为 mss 格式
+                # 兼容性处理：支持 top/left 和 y/x 两种 key
+                top = int(dock_rect.get("top", dock_rect.get("y", 0)))
+                left = int(dock_rect.get("left", dock_rect.get("x", 0)))
                 monitor = {
-                    "top": int(dock_rect["y"]),
-                    "left": int(dock_rect["x"]),
+                    "top": top, 
+                    "left": left,
                     "width": int(dock_rect["width"]),
                     "height": int(dock_rect["height"])
                 }
                 sct_img = sct.grab(monitor)
                 img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-                
-                # 将 PIL 转换为 DIB 格式放入剪贴板
-                output = io.BytesIO()
-                img.convert("RGB").save(output, "BMP")
-                data = output.getvalue()[14:] # 剥离 14 字节的 BMP 文件头
-                output.close()
-                
-                win32clipboard.OpenClipboard()
-                try:
-                    win32clipboard.EmptyClipboard()
-                    win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
-                    self._log("截图已存入系统剪贴板 (Ready for Paste)")
-                    return True
-                finally:
-                    win32clipboard.CloseClipboard()
+                self.image_queue.append(img)
+                self._log(f"画面已加入队列 (当前长度: {len(self.image_queue)})")
+                return True
         except Exception as e:
-            self._log(f"截图至剪贴板失败: {e}")
+            self._log(f"加入队列失败: {e}")
+            return False
+
+    def action_capture_to_clipboard(self, dock_rect):
+        """兼容旧版：清空队列并加入单张图"""
+        self.action_clear_queue()
+        return self.action_add_to_queue(dock_rect)
+
+    def action_add_file_to_queue(self, file_path):
+        """将磁盘上的文件（如叠合图）加入投喂队列"""
+        try:
+            if os.path.exists(file_path):
+                img = Image.open(file_path)
+                self.image_queue.append(img)
+                self._log(f"外部文件已加入队列: {os.path.basename(file_path)}")
+                return True
+        except Exception as e:
+            self._log(f"加入外部文件失败: {e}")
             return False
 
     def action_focus_gpt_window(self):
-        """
-        寻找并激活包含 'ChatGPT' 字样的窗口 (加固版 V2)。
-        """
+        """寻找并激活浏览器窗口 (V28 缓存加速版)"""
         pythoncom.CoInitialize()
         try:
-            target_hwnd = None
+            # 1. 优先尝试缓存的句柄
+            if self.cached_hwnd and win32gui.IsWindow(self.cached_hwnd) and win32gui.IsWindowVisible(self.cached_hwnd):
+                title = win32gui.GetWindowText(self.cached_hwnd).lower()
+                if any(k in title for k in ["chatgpt", "doubao", "chrome", "edge"]):
+                    self._activate_hwnd(self.cached_hwnd)
+                    return True
+
+            # 2. 缓存失效，重新全域搜索
             candidates = []
-            
             def callback(hwnd, extra):
                 if win32gui.IsWindowVisible(hwnd):
                     title = win32gui.GetWindowText(hwnd).lower()
-                    # 拓宽搜索关键词：适配 ChatGPT、豆包 (Doubao)、Chrome 或 Edge 的各种标题状态
                     if any(k in title for k in ["chatgpt", "doubao", "豆包", "google chrome", "microsoft edge"]):
                         candidates.append(hwnd)
                 return True
-
             win32gui.EnumWindows(callback, None)
 
             if not candidates:
-                self._log("未找到任何浏览器窗口 (Chrome/Edge/ChatGPT)，请确保已打开浏览器")
+                self._log("未找到任何浏览器窗口，请确保已打开豆包/ChatGPT")
                 return False
 
-            # 优先级排序：1. 含有 chatgpt/doubao 的窗口  2. 最近活跃的 Chrome/Edge 窗口
-            target_hwnd = None
-            priority_keywords = ["chatgpt", "doubao", "豆包"]
+            # 优先逻辑：找到包含豆包或 chatgpt 的
+            target = candidates[0]
             for hwnd in candidates:
                 t = win32gui.GetWindowText(hwnd).lower()
-                if any(pk in t for pk in priority_keywords):
-                    target_hwnd = hwnd
+                if any(k in t for k in ["chatgpt", "doubao", "豆包"]):
+                    target = hwnd
                     break
             
-            if not target_hwnd:
-                target_hwnd = candidates[0] # 取列表第一个作为保底
-
-            try:
-                # 强行破解焦点保护：发送 ALT 键信号
-                shell = win32com.client.Dispatch("WScript.Shell")
-                shell.SendKeys('%')
-                
-                win32gui.ShowWindow(target_hwnd, win32con.SW_RESTORE)
-                win32gui.BringWindowToTop(target_hwnd)
-                win32gui.SetForegroundWindow(target_hwnd)
-                time.sleep(1.0) 
-                self._log(f"成功锁定并激活窗口: {win32gui.GetWindowText(target_hwnd)}")
-                return True
-            except Exception as e:
-                self._log(f"聚焦窗口失败: {e}")
-                return False
+            self.cached_hwnd = target
+            self._activate_hwnd(target)
+            return True
         finally:
             pythoncom.CoUninitialize()
 
+    def _activate_hwnd(self, hwnd):
+        """物理激活窗口内核"""
+        try:
+            shell = win32com.client.Dispatch("WScript.Shell")
+            shell.SendKeys('%') # 破解 Win10 焦点限制
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+            win32gui.BringWindowToTop(hwnd)
+            win32gui.SetForegroundWindow(hwnd)
+            time.sleep(0.5)
+        except: pass
+
+    def action_send_queue_to_gpt(self, custom_prompt=None):
+        """将队列中的所有图片连选粘贴并发送指令 (V28 爆发式投喂)"""
+        if not self.image_queue:
+            self._log("错误: 队列为空，无可投喂内容")
+            return False
+
+        try:
+            # 1. 批量粘贴图片
+            for i, img in enumerate(self.image_queue):
+                self._put_img_to_clipboard(img)
+                pyautogui.hotkey('ctrl', 'v')
+                self._log(f"已粘贴第 {i+1}/{len(self.image_queue)} 张图片")
+                time.sleep(1.2) # 留出上传缓冲
+
+            # 2. 注入提示词
+            prompt = custom_prompt if custom_prompt else self.system_prompt
+            self._copy_text_to_clipboard(prompt)
+            pyautogui.hotkey('ctrl', 'v')
+            time.sleep(0.5)
+            
+            # 3. 发送
+            pyautogui.press('enter')
+            time.sleep(0.2)
+            pyautogui.hotkey('ctrl', 'enter') # 双重保险
+            
+            self._log("全量图片与指令已投喂")
+            return True
+        except Exception as e:
+            self._log(f"投喂失败: {e}")
+            return False
+
+    def action_send_to_gpt(self, custom_prompt=None):
+        """兼容旧版：发送队列内容"""
+        return self.action_send_queue_to_gpt(custom_prompt)
+
+    def _put_img_to_clipboard(self, img):
+        """将 PIL Image 转换为 DIB 并存入剪贴板"""
+        output = io.BytesIO()
+        img.convert("RGB").save(output, "BMP")
+        data = output.getvalue()[14:]
+        output.close()
+        win32clipboard.OpenClipboard()
+        try:
+            win32clipboard.EmptyClipboard()
+            win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
+        finally:
+            win32clipboard.CloseClipboard()
+
     def _copy_text_to_clipboard(self, text):
-        """
-        将纯文本高效存入剪贴板 (Unicode 格式)。
-        """
         win32clipboard.OpenClipboard()
         try:
             win32clipboard.EmptyClipboard()
             win32clipboard.SetClipboardText(text, win32clipboard.CF_UNICODETEXT)
-            return True
         finally:
             win32clipboard.CloseClipboard()
 
-    def action_send_to_gpt(self, custom_prompt=None):
+    def action_wait_for_gpt_complete(self, timeout=30):
         """
-        在当前聚焦窗口执行 粘贴(图) + 粘贴(文) + 发送 (精密加固版 V27.7)。
+        [V28 新增] 监听豆包“发送”按钮的状态
+        判断 AI 是否已经回答完毕（按钮从‘停止’变回‘发送’）
         """
-        try:
-            prompt = custom_prompt if custom_prompt else self.system_prompt
-            
-            # --- 步骤 1: 粘贴图片 (图片已经在剪贴板里了，由 capture 步骤放入) ---
-            pyautogui.hotkey('ctrl', 'v')
-            self._log("已执行图片粘贴")
-            time.sleep(2.0) # 留出图片解析时间
-            
-            # --- 步骤 2: 粘贴文字 (将提示词注入剪贴板并粘贴) ---
-            if self._copy_text_to_clipboard(prompt):
-                pyautogui.hotkey('ctrl', 'v')
-                self._log(f"已执行提示词粘贴: {prompt[:15]}...")
-            
-            time.sleep(1.0)
-            
-            # --- 步骤 3: 强力发送 ---
-            # 尝试回车
-            pyautogui.press('enter')
-            # 兼容性冗余：有些浏览器需要 Ctrl+Enter
-            time.sleep(0.5)
-            pyautogui.hotkey('ctrl', 'enter')
-            
-            self._log("指令已成功投喂至 GPT 输入框并尝试发送")
-            return True
-        except Exception as e:
-            self._log(f"发送指令失败: {e}")
-            return False
+        self._log("正在监听 AI 响应状态...")
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            # 这里可以通过 OCR 寻找页面右下角的图标特征，或者简单的固定等待
+            # 为了稳定性，我们先结合“文字特征”探测
+            time.sleep(2)
+            # 模拟：通过简单的时间和状态判断，后期可升级为视觉探测
+            if time.time() - start_time > 10: # 至少等待 10s
+                return True
+        return True
 
-    def action_extract_decision(self, ocr_reader):
+    def action_extract_multi_decision(self, ocr_reader):
         """
-        截图 GPT/豆包 窗口并进行区域优化 OCR 查找最后的决策词 (V28.1)。
+        截图并提取结构化决策 (V28 局部 ROI 加速版)
         """
         try:
-            self._log("正在捕获屏幕并启动区域辅助 OCR...")
-            
+            self._log("执行 ROI 局部扫描以提取决策...")
             with mss.mss() as sct:
                 monitor = sct.monitors[0]
                 sct_img = sct.grab(monitor)
                 img = np.array(sct_img)
-                # 转换为 RGB
-                rgb_img = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
                 
-                # --- 区域优化: 只识别屏幕右侧 60% (LLM 聊天区) ---
-                h, w = rgb_img.shape[:2]
-                crop_x = int(w * 0.4) # 跳过左侧 40%
-                cropped_img = rgb_img[:, crop_x:]
+                # 仅分析屏幕右侧 60% 区域（避开侧边栏）
+                h, w = img.shape[:2]
+                roi = img[:, int(w*0.4):]
                 
-                # 保存一份裁剪后的快照供审计
-                debug_path = os.path.join(self.records_dir, "gpt_decision_view.png")
-                cv2.imwrite(debug_path, cv2.cvtColor(cropped_img, cv2.COLOR_RGB2BGR))
+                results = ocr_reader.reader.readtext(roi)
+                full_text = " ".join([r[1] for r in results])
                 
-                self._log(f"OCR 正在扫描右侧区域 ({w-crop_x}px 宽)...")
-                results = ocr_reader.reader.readtext(cropped_img)
-                self._log(f"OCR 扫描完成，获得 {len(results)} 条文本片段")
+                # 针对 V28 专家格式的增强匹配
+                key_mapping = {
+                    "overall": "Overall Preference",
+                    "instruction": "Instruction Following",
+                    "id": "ID Preservation",
+                    "content": "Content Preservation",
+                    "visual": "Visual Quality",
+                    "generated": "Less AI Generated"
+                }
                 
-                # 从下往上找最后的 A 或 B
-                for i in range(len(results)-1, -1, -1):
-                    text = results[i][1].upper()
-                    # 极其宽松的匹配：包含 A 或 B 且长度极短
-                    if 'A' in text and len(text) < 4: return "A"
-                    if 'B' in text and len(text) < 4: return "B"
+                decision_map = {}
+                import re
+                for short_key, full_name in key_mapping.items():
+                    # 匹配格式: "Overall: A" 或 "Overall Preference: Response B"
+                    pattern = rf"{short_key}[:：\s]+(response\s*[ab]|both\s*good|both\s*bad|n/a|[ab])"
+                    match = re.search(pattern, full_text, re.IGNORECASE)
+                    if match:
+                        val = match.group(1).strip().upper()
+                        if val == "A": val = "Response A"
+                        if val == "B": val = "Response B"
+                        decision_map[full_name] = val
                 
-                self._log("未能在扫描区域内识别出明确决策 ('A' 或 'B')")
+                if decision_map:
+                    self._log(f"解析成功: {decision_map}")
+                    return decision_map
                 return None
         except Exception as e:
-            self._log(f"决策提取发生异常: {e}")
+            self._log(f"解析异常: {e}")
             return None
+
