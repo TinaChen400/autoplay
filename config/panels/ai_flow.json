@@ -1,5 +1,5 @@
 {
-  "name": "AI 全自动双图研判",
+  "name": "AI 全自动全量研判",
   "category": "ai",
   "steps": [
     {
@@ -12,8 +12,7 @@
       "name": "2. 模拟真人预读",
       "skill": "human_idle_move",
       "params": {
-        "duration": 3.5,
-        "steps": 40
+        "duration": 2.0
       }
     },
     {
@@ -23,42 +22,23 @@
     },
     {
       "id": 4,
-      "name": "4. 滚回顶部",
-      "skill": "scroll_up",
+      "name": "4. 智能翻页全量抓取",
+      "skill": "auto_page_capture",
       "params": {
-        "times": 5
+        "max_pages": 15
       }
     },
     {
       "id": 5,
-      "name": "5. 抓取顶部快照",
-      "skill": "ai_snap"
+      "name": "5. 模拟检查思考",
+      "skill": "human_idle_move",
+      "params": {
+        "duration": 3.0
+      }
     },
     {
       "id": 6,
-      "name": "6. 滑到底部",
-      "skill": "scroll_down",
-      "params": {
-        "times": 5
-      }
-    },
-    {
-      "id": 7,
-      "name": "7. 抓取底部快照",
-      "skill": "ai_snap"
-    },
-    {
-      "id": 8,
-      "name": "8. 模拟检查思考",
-      "skill": "human_idle_move",
-      "params": {
-        "duration": 4.5,
-        "steps": 50
-      }
-    },
-    {
-      "id": 9,
-      "name": "9. 切换并投喂给 AI",
+      "name": "6. 切换并投喂给 AI",
       "skill": "ai_analyze",
       "params": {
         "prompt": "这是图片评分任务截图, 包含指令要求input/原图， 文字要求和Response A/B两张对比图。\n\n请按以下评分维度,直接输出：文字要求翻译成非常简短的中文描述，维度名: [Response A / Response B / Both Good / Both Bad]。\n\n注意: 不要多余理由,只给选项。维度包括:\n1. Overall Preference\n2. Instruction Following\n3. ID Preservation\n4. Content Preservation\n5. Visual Quality\n6. Less AI Generated, 最后输出一个最佳答案选的原因， 100字节的英文， 不要标点符号。"

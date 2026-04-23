@@ -1,69 +1,80 @@
+# -*- coding: utf-8 -*-
 import sys
 import os
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 import json
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel
-from PyQt6.QtCore import Qt, QTimer, QRect
+import logging
+import ctypes
+from PyQt6.QtWidgets import QApplication, QWidget
+from PyQt6.QtCore import Qt, QTimer, QRect, QPoint
 from PyQt6.QtGui import QColor, QPen, QPainter
-import pygetwindow as gw
+import win32gui
+import win32api
+import win32con
+
+# 1. Kill all Qt scaling to avoid coordinate confusion
+os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
+os.environ["QT_AUTOSCREENSCALEFACTOR"] = "0"
+
+# 2. Try to force Per-Monitor V2 for the process
+try:
+    ctypes.windll.shcore.SetProcessDpiAwareness(2) 
+except:
+    pass
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("VisualDock")
+
+from src.utils.viewport_manager import ViewportManager
+from src.utils.hardware_manager import HardwareManager
 
 class VisualDock(QWidget):
     def __init__(self):
         super().__init__()
-        # 1. 窗口属性：无边框、工具悬浮、始终置顶
-        self.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint | 
-            Qt.WindowType.WindowStaysOnTopHint | 
-            Qt.WindowType.Tool
-        )
+        self.vm = ViewportManager()
+        self.hm = HardwareManager()
+        
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         
-        # 2. 初始状态
-        self.resize(1000, 800)
-        self.move(100, 100)
         self.is_docked = False
-        self.target_title = "oliver"
+        self.target_hwnd = None
+        self.target_title_keywords = ["tina", "remote"]
+        self.current_color = QColor(0, 191, 255, 120)
         
-        # 3. 颜色定义 (亮蓝 -> 绿色)
-        self.default_color = QColor(0, 191, 255, 100) # DeepSkyBlue
-        self.active_color = QColor(50, 205, 50, 150)   # LimeGreen
-        self.current_color = self.default_color
-        
-        # 4. 定时器：每秒检测一次下方窗口
         self.timer = QTimer()
-        self.timer.timeout.connect(self.check_window_collision)
-        self.timer.start(1000)
+        self.timer.timeout.connect(self.update_logic)
+        self.timer.start(50) 
         
-        # 5. 为了能拖动窗口
         self.old_pos = None
-
-        print("--- 视觉相框已启动 ---")
-        print(">>> 请将远程桌面窗口拖入此蓝色框内...")
+        self.resize(400, 300)
+        self.physical_rect = (0, 0, 0, 0)
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
-        # 1. 绘制边框 (高对比度亮蓝或绿色)
-        pen = QPen(self.current_color, 8) # 加粗边框，方便对齐
-        painter.setPen(pen)
-        # 内部完全透明，只画边框
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawRect(self.rect().adjusted(4, 4, -4, -4))
+        border_width = 8
+        painter.setPen(QPen(self.current_color, border_width))
+        painter.drawRect(self.rect().adjusted(border_width//2, border_width//2, -border_width//2, -border_width//2))
         
-        # 2. 中心准星 (仅在未对齐时显示)
-        if not self.is_docked:
-            painter.setPen(QPen(Qt.GlobalColor.white, 2))
-            cx, cy = self.width() // 2, self.height() // 2
-            painter.drawLine(cx - 30, cy, cx + 30, cy)
-            painter.drawLine(cx, cy - 30, cx, cy + 30)
-            
-            # 提示文字
-            painter.setFont(self.font())
-            painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignBottom, "正在寻找 oliver...")
+        painter.setPen(QPen(Qt.GlobalColor.white, 2))
+        info = f"Physical: {self.physical_rect[0]}, {self.physical_rect[1]} | {self.physical_rect[2]-self.physical_rect[0]}x{self.physical_rect[3]-self.physical_rect[1]}"
+        if self.is_docked:
+            info += "\n[STATUS: DOCKED]"
+        painter.drawText(self.rect().adjusted(15, 15, -15, -15), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, info)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self.old_pos = event.globalPosition().toPoint()
+            if self.is_docked:
+                self.is_docked = False
+                self.target_hwnd = None
+                self.current_color = QColor(0, 191, 255, 120)
 
     def mouseMoveEvent(self, event):
         if self.old_pos:
@@ -73,56 +84,69 @@ class VisualDock(QWidget):
 
     def mouseReleaseEvent(self, event):
         self.old_pos = None
-        self.save_config()
+        # When moving manually, we don't have a target_hwnd yet
+        self.physical_rect = (self.x(), self.y(), self.x() + self.width(), self.y() + self.height())
+        self.sync_to_managers(self.physical_rect)
 
-    def check_window_collision(self):
-        """核心：磁力吸附与碰撞检测"""
-        try:
-            target_win = None
-            for w in gw.getAllWindows():
-                if self.target_title in w.title.lower() and "chrome" in w.title.lower():
-                    target_win = w
-                    break
+    def update_logic(self):
+        if not self.is_docked:
+            cx = self.x() + self.width() // 2
+            cy = self.y() + self.height() // 2
             
-            if target_win:
-                win_rect = QRect(target_win.left, target_win.top, target_win.width, target_win.height)
-                dock_rect = QRect(self.x(), self.y(), self.width(), self.height())
-                
-                # 计算两个矩形的重叠程度或距离
-                if dock_rect.intersects(win_rect):
-                    if not self.is_docked:
-                        # 🚨 触发全自动吸附：将相框坐标强制设定为窗口坐标
-                        print(f"[SNAP] 啪嗒！相框已自动吸附至 {target_win.title}")
-                        self.is_docked = True
-                        self.current_color = self.active_color
-                        # 像素级重合
-                        self.setGeometry(win_rect)
-                        self.update()
-                        self.save_config()
-                else:
-                    if self.is_docked:
-                        self.is_docked = False
-                        self.current_color = self.default_color
-                        print("[RELEASE] 相框已脱离。")
-                        self.update()
-        except Exception as e:
-            pass
+            def callback(hwnd, extra):
+                if win32gui.IsWindowVisible(hwnd):
+                    title = win32gui.GetWindowText(hwnd).lower()
+                    if any(kw in title for kw in self.target_title_keywords):
+                        rect = win32gui.GetWindowRect(hwnd)
+                        if rect[0] <= cx <= rect[2] and rect[1] <= cy <= rect[3]:
+                            extra.append(hwnd)
+                            return False 
+                return True
 
-    def save_config(self):
-        """保存当前相框坐标，供执行引擎调用"""
-        config_path = r"D:\Dev\autoplay\config\calibration_db.json"
-        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+            found = []
+            try: win32gui.EnumWindows(callback, found)
+            except: pass
+                
+            if found:
+                logger.info(f"SNAP! Target detected: {win32gui.GetWindowText(found[0])}")
+                self.is_docked = True
+                self.target_hwnd = found[0]
+                self.current_color = QColor(50, 255, 50, 200)
+                self.follow_win32()
+        else:
+            if win32gui.IsWindow(self.target_hwnd) and win32gui.IsWindowVisible(self.target_hwnd):
+                self.follow_win32()
+            else:
+                self.is_docked = False
+                self.current_color = QColor(0, 191, 255, 120)
+
+    def follow_win32(self):
+        try:
+            # RAW physical coordinates from OS
+            rect = win32gui.GetWindowRect(self.target_hwnd)
+            self.physical_rect = rect
+            w = rect[2] - rect[0]
+            h = rect[3] - rect[1]
+            
+            # Update UI geometry to match
+            if (self.x(), self.y(), self.width(), self.height()) != (rect[0], rect[1], w, h):
+                self.setGeometry(rect[0], rect[1], w, h)
+                # Sync using the RAW rect, NOT self.x()/y()
+                self.sync_to_managers(rect)
+                self.update()
+        except:
+            self.is_docked = False
+
+    def sync_to_managers(self, rect):
+        """rect is (x1, y1, x2, y2) physical pixels."""
         data = {
-            "dock_rect": {
-                "x": self.x(),
-                "y": self.y(),
-                "width": self.width(),
-                "height": self.height()
-            },
-            "status": "docked" if self.is_docked else "floating"
+            "x": rect[0],
+            "y": rect[1],
+            "width": rect[2] - rect[0],
+            "height": rect[3] - rect[1]
         }
-        with open(config_path, "w") as f:
-            json.dump(data, f, indent=4)
+        self.vm.update_dock_rect(data)
+        self.hm.update_calibration(data)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

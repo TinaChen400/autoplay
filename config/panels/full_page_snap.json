@@ -1,0 +1,24 @@
+{
+  "name": "智能翻页全量抓取",
+  "category": "tool",
+  "steps": [
+    {
+      "id": 1,
+      "name": "1. 锁定窗口位置",
+      "skill": "lock_window_position"
+    },
+    {
+      "id": 2,
+      "name": "2. 清空 AI 队列",
+      "skill": "ai_clear"
+    },
+    {
+      "id": 3,
+      "name": "3. 执行智能全量拍照",
+      "skill": "auto_page_capture",
+      "params": {
+        "max_pages": 15
+      }
+    }
+  ]
+}

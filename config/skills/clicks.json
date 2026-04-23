@@ -1,0 +1,20 @@
+{
+  "click_at": {
+    "description": "点击指定坐标",
+    "category": "click",
+    "params": {
+      "x_percent": 0.0,
+      "y_percent": 0.0,
+      "jitter": true
+    }
+  },
+  "double_click_at": {
+    "description": "双击指定坐标",
+    "category": "click",
+    "params": {
+      "x_percent": 0.0,
+      "y_percent": 0.0,
+      "jitter": true
+    }
+  }
+}

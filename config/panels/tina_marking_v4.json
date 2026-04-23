@@ -1,0 +1,123 @@
+{
+  "name": "Tina 评分任务 V4 (经典暴力版)",
+  "category": "legacy",
+  "steps": [
+    {
+      "id": 1,
+      "name": "0. 检查并清理弹窗广告",
+      "skill": "click_landmark",
+      "params": {
+        "keywords": ["取消", "开通会员"],
+        "optional": true
+      }
+    },
+    {
+      "id": 2,
+      "name": "1. 首页截图拍照",
+      "skill": "ai_snap"
+    },
+    {
+      "id": 3,
+      "name": "2. 滚到底部",
+      "skill": "scroll_down",
+      "params": { "times": 10 }
+    },
+    {
+      "id": 4,
+      "name": "3. 底部截图拍照",
+      "skill": "ai_snap"
+    },
+    {
+      "id": 5,
+      "name": "4. 返回页面顶部",
+      "skill": "scroll_up",
+      "params": { "times": 10 }
+    },
+    {
+      "id": 6,
+      "name": "5. 内容唤醒并点击 Inputs",
+      "skill": "click_landmark",
+      "params": {
+        "keywords": ["Inputs", "Inpuis", "Omni Elo", "Guidelines"],
+        "offset_y": 40
+      }
+    },
+    {
+      "id": 7,
+      "name": "5.5 加载延时缓冲",
+      "skill": "sleep",
+      "params": { "seconds": "2.0-6.0" }
+    },
+    {
+      "id": 8,
+      "name": "6. 内部视图导航",
+      "skill": "press_keys",
+      "params": {
+        "keys": ["down", "right", "left"],
+        "interval": 0.8
+      }
+    },
+    {
+      "id": 9,
+      "name": "7. 对焦并观察 Response A",
+      "skill": "click_landmark",
+      "params": {
+        "keywords": ["Response A", "Response"],
+        "optional": true
+      }
+    },
+    {
+      "id": 10,
+      "name": "7.1 切到下一个视图",
+      "skill": "press_keys",
+      "params": { "keys": ["right"] }
+    },
+    {
+      "id": 11,
+      "name": "8. 对焦并观察 Response B",
+      "skill": "click_landmark",
+      "params": {
+        "keywords": ["Response B", "Response"],
+        "optional": true
+      }
+    },
+    {
+      "id": 12,
+      "name": "8.1 退出视图 (Esc)",
+      "skill": "press_keys",
+      "params": { "keys": ["esc"] }
+    },
+    {
+      "id": 13,
+      "name": "9. 开启 Response A 详情",
+      "skill": "click_landmark_radar",
+      "params": {
+        "keywords": ["Response A"],
+        "firezone_x": 720
+      }
+    },
+    {
+      "id": 15,
+      "name": "10. 暴力巡航 A/B",
+      "skill": "press_keys",
+      "params": {
+        "keys": ["right", "left", "left", "right"],
+        "interval": 1.5
+      }
+    },
+    {
+      "id": 15,
+      "name": "11. 退出详情 (Esc)",
+      "skill": "press_keys",
+      "params": { "keys": ["esc"] }
+    },
+    {
+      "id": 16,
+      "name": "12. 切换并投喂给 AI",
+      "skill": "ai_analyze",
+      "params": {
+        "prompt": "请对比 Response A 和 B，给出评分结果。"
+      }
+    }
+  ]
+}

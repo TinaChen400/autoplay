@@ -73,5 +73,39 @@
       "duration": 2.0,
       "steps": 20
     }
+  },
+  "auto_page_capture": {
+    "description": "智能翻页全量抓取",
+    "params": {
+      "max_pages": 10
+    }
+  },
+  "press_keys": {
+    "description": "模拟键盘按键",
+    "params": {
+      "keys": [],
+      "interval": 0.5
+    }
+  },
+  "click_landmark": {
+    "description": "地标点击",
+    "params": {
+      "keywords": [],
+      "optional": false,
+      "offset_y": 0
+    }
+  },
+  "click_landmark_radar": {
+    "description": "视觉雷达对焦点击",
+    "params": {
+      "keywords": ["Response A"],
+      "firezone_x": 720
+    }
+  },
+  "sleep": {
+    "description": "延时等待",
+    "params": {
+      "seconds": 1.0
+    }
   }
 }

@@ -1,20 +1,20 @@
 {
-  "current_profile": "TINA-Vertical",
-  "profiles": {
-    "TINA-Vertical": {
-      "device_name": "TINA",
-      "monitoring_mode": "MainWorkspace",
-      "screen_geometry": "1440x2560",
-      "calibration": {
-        "dock_rect": {
-          "x": 279,
-          "y": 1027,
-          "width": 1685,
-          "height": 996
-        },
-        "dpi_offset_y": 140
-      },
-      "last_updated": 1776899899.5590582
+    "current_profile": "TINA-Vertical",
+    "profiles": {
+        "TINA-Vertical": {
+            "device_name": "TINA",
+            "monitoring_mode": "MainWorkspace",
+            "screen_geometry": "1440x2560",
+            "calibration": {
+                "dock_rect": {
+                    "x": 10,
+                    "y": 10,
+                    "width": 1440,
+                    "height": 900
+                },
+                "dpi_offset_y": 140
+            },
+            "last_updated": 1776964388.3255591
+        }
     }
-  }
 }

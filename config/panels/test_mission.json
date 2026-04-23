@@ -1,0 +1,38 @@
+{
+  "name": "测试任务序列",
+  "category": "test",
+  "steps": [
+    {
+      "id": 1,
+      "name": "移动并点击中心",
+      "skill": "click_at",
+      "params": {
+        "x_percent": 50.0,
+        "y_percent": 50.0
+      }
+    },
+    {
+      "id": 2,
+      "name": "滑到底部",
+      "skill": "scroll_down",
+      "params": {
+        "times": 5
+      }
+    },
+    {
+      "id": 3,
+      "name": "休息一下",
+      "skill": "sleep",
+      "params": {
+        "seconds": 1
+      }
+    },
+    {
+      "id": 4,
+      "skill": "scroll_up",
+      "params": {
+        "times": 5
+      }
+    }
+  ]
+}

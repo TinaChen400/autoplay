@@ -1,0 +1,47 @@
+{
+  "name": "Tina 评分任务 - 第一阶段 (视觉对位)",
+  "category": "scoring",
+  "steps": [
+    {
+      "id": 1,
+      "name": "1. 锁定视口环境",
+      "skill": "lock_window_position",
+      "params": {
+        "x": 10,
+        "y": 10,
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "id": 2,
+      "name": "2. 点击 Input 下方的原图",
+      "skill": "find_and_click",
+      "params": {
+        "keywords": [
+          "Inputs",
+          "Input",
+          "IpIU",
+          "S Inpwrs",
+          "Inpwrs",
+          "Input5",
+          "nput"
+        ],
+        "offset_x": 0,
+        "offset_y": 100,
+        "optional": false,
+        "min_score": 0.3
+      }
+    },
+    {
+      "id": 3,
+      "name": "3. 智能点击 Response A 的放大图标",
+      "skill": "click_image_corner",
+      "params": {
+        "keywords": ["Response A", "ResponseA", "Responsc A", "Response"],
+        "corner": "top-right",
+        "margin": 25
+      }
+    }
+  ]
+}

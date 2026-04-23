@@ -1,87 +1,54 @@
+# -*- coding: utf-8 -*-
 import win32gui
-import ctypes
-from ctypes import wintypes
-from typing import Optional, Dict
+import win32con
+import logging
 
-# 全程开启物理像素感知
-try:
-    ctypes.windll.shcore.SetProcessDpiAwareness(1)
-except:
-    ctypes.windll.user32.SetProcessDPIAware()
+logger = logging.getLogger("WindowLock")
 
-class WindowManager:
-    """
-    DWM 级窗口像素管理模块。
-    通过扩展框架边界 (Extended Frame Bounds) 实现绝对零误差对位。
-    """
-    def __init__(self, keywords: list):
-        self.keywords = keywords
-        self.hwnd = None
+class WindowLock:
+    def __init__(self, keyword="Tina"):
+        self.keyword = keyword
 
-    def find_remote_window(self) -> Optional[int]:
-        def callback(hwnd, hwnds):
-            if win32gui.IsWindowVisible(hwnd) and not win32gui.IsIconic(hwnd):
+    def find_window(self):
+        found = []
+        # 黑名单：绝对不能误抓的窗口关键词
+        blacklist = ["antigravity", "visual studio", "code", ".json", ".py", "test_executor"]
+        
+        def cb(hwnd, extra):
+            if win32gui.IsWindowVisible(hwnd):
                 title = win32gui.GetWindowText(hwnd).lower()
-                for kw in self.keywords:
-                    if kw and kw.lower() in title:
-                        # 核心补丁：排除 AI Agent 自身，并确保窗口有实际物理尺寸（排除影子窗口）
-                        if "ai agent" not in title and "visual" not in title:
-                            l, t, r, b = win32gui.GetWindowRect(hwnd)
-                            if (r - l) > 100 and (b - t) > 100: # 必须大于 100 像素
-                                hwnds.append(hwnd)
+                # 只有包含关键字且不在黑名单中，才认为是目标
+                if self.keyword.lower() in title:
+                    if not any(b in title for b in blacklist):
+                        extra.append(hwnd)
             return True
-        
-        hwnds = []
-        win32gui.EnumWindows(callback, hwnds)
-        if hwnds:
-            # 强化逻辑：如果有多个同名窗口，优先选择 HWND 较大的（通常是更晚创建的活跃窗口）
-            self.hwnd = sorted(hwnds, reverse=True)[0]
-            return self.hwnd
-        return None
+        win32gui.EnumWindows(cb, found)
+        return found[0] if found else None
 
-    def get_window_rect(self) -> Optional[Dict[str, int]]:
-        """
-        利用 DWM API 提取窗口真实的可见物理边框（不含阴影）。
-        """
-        if not self.hwnd:
-            self.find_remote_window()
-        
-        if self.hwnd:
-            try:
-                # 获取 DWM 物理可见边界
-                rect = wintypes.RECT()
-                DWMWA_EXTENDED_FRAME_BOUNDS = 9
-                res = ctypes.windll.dwmapi.DwmGetWindowAttribute(
-                    ctypes.wintypes.HWND(self.hwnd),
-                    ctypes.wintypes.DWORD(DWMWA_EXTENDED_FRAME_BOUNDS),
-                    ctypes.byref(rect),
-                    ctypes.sizeof(rect)
-                )
-                
-                if res != 0:
-                    # 降级：如果 DWM 获取失败，使用常规模式
-                    l, t, r, b = win32gui.GetWindowRect(self.hwnd)
-                else:
-                    l, t, r, b = rect.left, rect.top, rect.right, rect.bottom
-                
-                w = r - l
-                h = b - t
-                
-                # 过滤异常值 (如最小化状态)
-                if l < -10000 or t < -10000: return None
-                    
-                return {
-                    "left": l,
-                    "top": t,
-                    "width": w,
-                    "height": h,
-                    "title": win32gui.GetWindowText(self.hwnd)
-                }
-            except Exception:
-                self.hwnd = None
-        return None
+    def lock_and_align(self, x=10, y=10, w=1440, h=900):
+        """强制对齐并锁定窗口位置与样式"""
+        hwnd = self.find_window()
+        if not hwnd:
+            logger.error(f"Could not find window with keyword '{self.keyword}' to lock.")
+            return False
 
-    def is_window_valid(self) -> bool:
-        if self.hwnd:
-            return win32gui.IsWindowVisible(self.hwnd) and not win32gui.IsIconic(self.hwnd)
-        return False
+        # 1. 解除最大化（如果是最大化状态，位置无法固定）
+        win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+        
+        # 2. 强制移动并设置大小
+        # SWP_NOSENDCHANGING: 不发送窗口大小改变消息，防止应用内部重排
+        win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, x, y, w, h, win32con.SWP_SHOWWINDOW)
+        
+        # 3. 修改窗口样式：移除调整大小的边框和最大化按钮
+        style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
+        style &= ~win32con.WS_THICKFRAME  # 移除调整边框
+        style &= ~win32con.WS_MAXIMIZEBOX # 移除最大化按钮
+        win32gui.SetWindowLong(hwnd, win32con.GWL_STYLE, style)
+        
+        logger.info(f"Window '{self.keyword}' LOCKED at ({x}, {y}) with size {w}x{h}")
+        return True
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    locker = WindowLock("Tina")
+    locker.lock_and_align()

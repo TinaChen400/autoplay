@@ -1,0 +1,16 @@
+{
+  "name": "测试任务序列",
+  "steps": [
+    {
+      "id": 0,
+      "name": "初始化环境：锚定窗口",
+      "skill": "lock_window_position",
+      "params": {
+        "x": 10,
+        "y": 10,
+        "width": 1440,
+        "height": 900
+      }
+    }
+  ]
+}

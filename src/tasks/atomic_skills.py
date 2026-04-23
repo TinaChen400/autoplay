@@ -217,6 +217,204 @@ def human_idle_move(vm: ViewportManager, duration: float = 2.0, steps: int = 15,
         
     return True
 
+@skill_handler("auto_page_capture")
+def auto_page_capture(vm: ViewportManager, max_pages: int = 10, **kwargs) -> bool:
+    """
+    全页面自动抓取：从顶翻到底，智能判断触底，每页存入 AI 队列。
+    """
+    from src.execution.gpt_oracle import GPTOracle
+    oracle = GPTOracle()
+    
+    # 1. 先滚回最顶部（多滚几次确保到位）
+    scroll_up_skill(vm, times=8)
+    time.sleep(1.0)
+    
+    last_text_fingerprint = ""
+    pages_captured = 0
+    
+    for i in range(max_pages):
+        # A. 抓取并存入队列
+        ai_snap_skill(vm)
+        pages_captured += 1
+        logger.info(f"Captured page {pages_captured}")
+        
+        # B. 获取当前视野的“文字指纹”用于触底检测
+        agent = get_agent()
+        rect = vm.dock_rect
+        view_path = agent.vc.capture_screen(region={"top": int(rect["y"]), "left": int(rect["x"]), "width": int(rect["width"]), "height": int(rect["height"])})
+        img = cv2.imread(view_path)
+        ocr = agent.vc.get_ocr()
+        results = ocr.read_screen(img)
+        # 取所有文字的前200个字符作为指纹
+        current_text = "".join([r[1] for r in results])[:200]
+        
+        if current_text == last_text_fingerprint and i > 0:
+            logger.info("Bottom reached (content identical to last page). Stopping.")
+            break
+            
+        last_text_fingerprint = current_text
+        
+        # C. 向下大幅度滚动（约一个屏幕高度）
+        scroll_down_skill(vm, times=8)
+        time.sleep(1.2) # 等待加载/渲染
+        
+    logger.info(f"Total pages captured: {pages_captured}")
+    return True
+
+@skill_handler("press_keys")
+def press_keys_skill(vm: ViewportManager, keys: list, interval: float = 0.5, **kwargs) -> bool:
+    """模拟按下方向键或功能键"""
+    import pyautogui
+    key_map = {"up": "up", "down": "down", "left": "left", "right": "right", "esc": "esc", "enter": "enter"}
+    for k in keys:
+        py_key = key_map.get(k.lower(), k.lower())
+        pyautogui.press(py_key)
+        time.sleep(interval)
+    return True
+
+@skill_handler("click_landmark")
+def click_landmark_skill(vm: ViewportManager, keywords: list, optional: bool = False, offset_x: int = 0, offset_y: int = 0, **kwargs) -> bool:
+    """根据关键词模糊搜索并在全屏范围内寻找并点击，支持偏移量和红点调试"""
+    agent = get_agent()
+    rect = vm.dock_rect
+    img_path = agent.vc.capture_screen(region={"top": int(rect["y"]), "left": int(rect["x"]), "width": int(rect["width"]), "height": int(rect["height"])})
+    img = cv2.imread(img_path)
+    ocr = agent.vc.get_ocr()
+    results = ocr.read_screen(img)
+    
+    found = False
+    for kw in keywords:
+        for res in results:
+            text_detected = res[1].lower()
+            if kw.lower() in text_detected:
+                # 转换为全局坐标
+                box = res[0]
+                center_x = (box[0][0] + box[2][0]) / 2
+                center_y = (box[0][1] + box[2][1]) / 2
+                
+                final_x = center_x + offset_x
+                final_y = center_y + offset_y
+                
+                # --- 红点调试逻辑 ---
+                debug_img = img.copy()
+                cv2.circle(debug_img, (int(final_x), int(final_y)), 15, (0, 0, 255), -1)
+                debug_path = os.path.join(agent.records_dir, "click_debug.jpg")
+                cv2.imwrite(debug_path, debug_img)
+                logger.info(f"DEBUG: Click evidence saved to {debug_path}")
+                # ------------------
+
+                abs_x = rect["x"] + final_x
+                abs_y = rect["y"] + final_y
+                
+                win32api.SetCursorPos((int(abs_x), int(abs_y)))
+                win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+                win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+                logger.info(f"Clicked landmark: {res[1]} (matched '{kw}') with offset ({offset_x}, {offset_y})")
+                return True
+    
+    if not optional:
+        logger.warning(f"Landmark NOT found: {keywords}")
+    return optional
+    
+    if not optional:
+        logger.warning(f"Landmark NOT found: {keywords}")
+    return optional
+
+@skill_handler("sleep")
+def sleep_skill(vm: ViewportManager, seconds: float = 1.0, **kwargs) -> bool:
+    """精准等待"""
+    # 支持 "2.0-5.0" 这种随机范围
+    if isinstance(seconds, str) and "-" in seconds:
+        import random
+        low, high = map(float, seconds.split("-"))
+        actual = random.uniform(low, high)
+    else:
+        actual = float(seconds)
+    time.sleep(actual)
+    return True
+
+@skill_handler("click_landmark_radar")
+def click_landmark_radar_skill(vm: ViewportManager, keywords: list, firezone_x: int = 720, **kwargs) -> bool:
+    """视觉雷达对焦：在中线以内寻找放大镜图标并点击"""
+    agent = get_agent()
+    rect = vm.dock_rect
+    img_path = agent.vc.capture_screen(region={"top": int(rect["y"]), "left": int(rect["x"]), "width": int(rect["width"]), "height": int(rect["height"])})
+    img = cv2.imread(img_path)
+    
+    # 1. 收集所有可能的锚点高度
+    ocr = agent.vc.get_ocr()
+    results = ocr.read_screen(img)
+    
+    anchors = []
+    for res in results:
+        text_detected = res[1].lower()
+        if any(kw.lower() in text_detected for kw in keywords):
+            # 这里的 x 坐标要符合火区逻辑（如果是找 B 栏，锚点通常在 720 以后）
+            cx = (res[0][0][0] + res[0][1][0]) / 2
+            cy = (res[0][0][1] + res[0][2][1]) / 2
+            
+            # 如果是找 A 栏 (firezone=720)，锚点应该在 720 以内
+            # 如果是找 B 栏 (firezone=1440)，锚点应该在 720 以后
+            if firezone_x <= 720 and cx < 720:
+                anchors.append(cy)
+            elif firezone_x > 720 and cx >= 720:
+                anchors.append(cy)
+            
+    if not anchors:
+        logger.warning(f"Radar failed: No valid anchors found for {keywords} in zone {firezone_x}")
+        return False
+
+    # 2. 对每个锚点高度进行视觉雷达扫描
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    debug_img = img.copy()
+    cv2.line(debug_img, (firezone_x, 0), (firezone_x, rect["height"]), (0, 255, 255), 2)
+    
+    best_target = None
+    min_dist = 9999
+    
+    # 找所有圆圈
+    all_circles = []
+    for cnt in contours:
+        (x, y), radius = cv2.minEnclosingCircle(cnt)
+        all_circles.append(((int(x), int(y)), radius))
+        cv2.circle(debug_img, (int(x), int(y)), int(radius), (200, 200, 200), 1)
+
+    # 尝试匹配每一个锚点
+    for anchor_y in anchors:
+        cv2.line(debug_img, (0, int(anchor_y)), (firezone_x, int(anchor_y)), (255, 0, 255), 1)
+        for center, radius in all_circles:
+            x, y = center
+            # 过滤逻辑：在中线范围内，高度匹配锚点
+            zone_min = 720 if firezone_x > 720 else 0
+            is_candidate = zone_min <= x < firezone_x and abs(y - anchor_y) < 60 and 5 < radius < 35
+            if is_candidate:
+                cv2.circle(debug_img, center, int(radius), (0, 255, 0), 2)
+                dist_to_mid = firezone_x - x
+                if dist_to_mid < min_dist:
+                    min_dist = dist_to_mid
+                    best_target = center
+
+    # 存调试图
+    debug_path = os.path.join(agent.records_dir, "radar_debug.jpg")
+    if best_target:
+        cv2.circle(debug_img, best_target, 15, (255, 0, 0), 3)
+    cv2.imwrite(debug_path, debug_img)
+
+    if best_target:
+        abs_x = rect["x"] + best_target[0]
+        abs_y = rect["y"] + best_target[1]
+        win32api.SetCursorPos((int(abs_x), int(abs_y)))
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+        logger.info(f"RADAR LOCKED: ICON DETECTED AT {best_target}. FIRE!")
+        return True
+
+    logger.warning(f"Radar scan completed: No targets found near any of the {len(anchors)} anchors.")
+    return False
+
 @skill_handler("find_and_click")
 def find_and_click(vm: ViewportManager, keywords: list, **kwargs) -> bool:
     # 简易实现用于提交按钮

@@ -12,8 +12,8 @@ import random
 # Project paths
 sys.path.append(r"D:\Dev\autoplay")
 from src.utils.vision import VisionCapture
-
 from src.execution.ahk_executor import AHKExecutor
+from src.execution.gpt_oracle import GPTOracle
 
 class RemoteAgent:
     def __init__(self, profile_name="Tina"):
@@ -21,6 +21,8 @@ class RemoteAgent:
         self.config_dir = r"D:\Dev\autoplay\config"
         self.profiles_path = os.path.join(self.config_dir, "profiles.json")
         self.vc = VisionCapture()
+        self.oracle = GPTOracle()
+        self.records_dir = r"D:\Dev\autoplay\records"
         self.profiles = {}
         
         # 初始化 AHK 执行器作为穿透备选 (优先检查 64 位路径)
