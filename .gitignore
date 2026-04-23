@@ -6,14 +6,37 @@ __pycache__/
 env/
 venv/
 ENV/
+.env
 
 # Project Specific
 temp/
 records/
-crash.log
+scratch/
+logs/
+*.log
+*.txt
+!requirements.txt
+!DAILY_STARTUP.md
 calibration_db.json
 config/calibration_db.json
-scratch/
+
+# Backup & Original Files
+*copy*
+*orig*
+*.bak
+*.tmp
+
+# Large Files & Models
+models/
+*.pt
+*.onnx
+*.engine
+
+# Temporary Assets/Debug
+*.jpg
+*.png
+*.webp
+tmp_analysis.jpg
 
 # IDE
 .vscode/

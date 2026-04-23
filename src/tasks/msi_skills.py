@@ -1,4 +1,4 @@
-import sys
+﻿import sys
 import json
 import os
 import cv2
@@ -22,7 +22,7 @@ from src.tasks.skill_gpt_oracle import GPTOracle
 
 class MSISkills:
     """
-    MSI 原子技能积木库 (V27: LLM Integrated)
+    MSI 鍘熷瓙鎶€鑳界Н鏈ㄥ簱 (V27: LLM Integrated)
     """
     def __init__(self, bridge=None):
         self.bridge = bridge
@@ -36,28 +36,26 @@ class MSISkills:
 
     def action_llm_send(self, prompt=None):
         """
-        步骤 1: 投喂截图与指令至豆包/GPT (V28.3)
+        姝ラ 1: 鎶曞杺鎴浘涓庢寚浠よ嚦璞嗗寘/GPT (V28.3)
         """
         if prompt is None:
-            # 使用默认提示词
-            prompt = self.oracle.system_prompt
+            # 浣跨敤榛樿鎻愮ず璇?            prompt = self.oracle.system_prompt
             
-        print("[SKILL] 正在投喂 UI 截图与指令至豆包/GPT...")
+        print("[SKILL] 姝ｅ湪鎶曞杺 UI 鎴浘涓庢寚浠よ嚦璞嗗寘/GPT...")
         
-        # 1. 物理位置准备 (加载当前 Tina 坐标)
+        # 1. 鐗╃悊浣嶇疆鍑嗗 (鍔犺浇褰撳墠 Tina 鍧愭爣)
         config = self._load_config()
         if not config or "dock_rect" not in config:
-            print("[SKILL] 错误: 未校准 Dock 坐标，无法截图")
+            print("[SKILL] 閿欒: 鏈牎鍑?Dock 鍧愭爣锛屾棤娉曟埅鍥?)
             return False
             
         dock_rect = config["dock_rect"]
         
-        # 2. 截图并存入剪贴板
+        # 2. 鎴浘骞跺瓨鍏ュ壀璐存澘
         if not self.oracle.action_capture_to_clipboard(dock_rect):
             return False
             
-        # 3. 唤起浏览器并发送
-        if not self.oracle.action_focus_gpt_window():
+        # 3. 鍞よ捣娴忚鍣ㄥ苟鍙戦€?        if not self.oracle.action_focus_gpt_window():
             return False
             
         if not self.oracle.action_send_to_gpt(prompt):
@@ -66,29 +64,29 @@ class MSISkills:
 
     def action_llm_extract_click(self):
         """
-        步骤 2: 抓取 LLM 结果并执行点击 (V28.1 优化版)
+        姝ラ 2: 鎶撳彇 LLM 缁撴灉骞舵墽琛岀偣鍑?(V28.1 浼樺寲鐗?
         """
-        print("[SKILL] 启动视觉提取引擎...")
+        print("[SKILL] 鍚姩瑙嗚鎻愬彇寮曟搸...")
         decision = self.oracle.action_extract_decision(self.ocr)
         
-        # 立即反馈至 UI
+        # 绔嬪嵆鍙嶉鑷?UI
         if self.bridge:
             for step in self.bridge.steps:
                 if step.methodName == "action_llm_extract_click":
-                    step.result_data = f"{decision}" if decision else "识别失败"
+                    step.result_data = f"{decision}" if decision else "璇嗗埆澶辫触"
                     break
             
-            # 强制通知 UI 刷新
+            # 寮哄埗閫氱煡 UI 鍒锋柊
             if hasattr(self.bridge, 'on_step_added_cb') and self.bridge.on_step_added_cb: 
                 self.bridge.on_step_added_cb()
 
         if not decision:
-            print("[SKILL] LLM 未能给出有效决策")
-        # 这里的决策 A/B 需要映射到 action_click_smart 的关键字
+            print("[SKILL] LLM 鏈兘缁欏嚭鏈夋晥鍐崇瓥")
+        # 杩欓噷鐨勫喅绛?A/B 闇€瑕佹槧灏勫埌 action_click_smart 鐨勫叧閿瓧
         keyword = f"Response {decision}"
-        print(f"[SKILL] GPT 最终决策: {decision} -> 尝试点击 '{keyword}'")
+        print(f"[SKILL] GPT 鏈€缁堝喅绛? {decision} -> 灏濊瘯鐐瑰嚮 '{keyword}'")
         
-        # 自动切换回 Tina 窗口 (通过 WindowManager)
+        # 鑷姩鍒囨崲鍥?Tina 绐楀彛 (閫氳繃 WindowManager)
         hwnd = win32gui.FindWindow(None, "Tina")
         if hwnd:
             win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
@@ -98,23 +96,21 @@ class MSISkills:
         return self.action_click_smart(keywords=[keyword])
 
     def _save_dock_rect(self, x, y, w, h):
-        """由 UI 实时调用的同步接口，更新物理对位基准"""
+        """鐢?UI 瀹炴椂璋冪敤鐨勫悓姝ユ帴鍙ｏ紝鏇存柊鐗╃悊瀵逛綅鍩哄噯"""
         dock_rect = {"x": x, "y": y, "width": w, "height": h}
-        # 直接通过硬件管理器保存，确保全局一致性
-        self.hw.update_calibration(dock_rect=dock_rect)
+        # 鐩存帴閫氳繃纭欢绠＄悊鍣ㄤ繚瀛橈紝纭繚鍏ㄥ眬涓€鑷存€?        self.hw.update_calibration(dock_rect=dock_rect)
 
     def _load_config(self):
-        """从活跃环境档案加载基准参数"""
+        """浠庢椿璺冪幆澧冩。妗堝姞杞藉熀鍑嗗弬鏁?""
         return self.hw.get_active_calibration()
 
     def action_screenshot(self, label="view"):
-        """原子积木：拍摄物理对位快照（V14.5 高分屏兼容版）"""
+        """鍘熷瓙绉湪锛氭媿鎽勭墿鐞嗗浣嶅揩鐓э紙V14.5 楂樺垎灞忓吋瀹圭増锛?""
         config = self._load_config()
         dock_rect = None
         if config:
             raw = config.get("dock_rect")
-            # 补丁：确保坐标为整数且在合规范围内
-            dock_rect = {
+            # 琛ヤ竵锛氱‘淇濆潗鏍囦负鏁存暟涓斿湪鍚堣鑼冨洿鍐?            dock_rect = {
                 "left": int(raw["x"]), 
                 "top": int(raw["y"]), 
                 "width": int(raw["width"]), 
@@ -122,245 +118,98 @@ class MSISkills:
             }
         
         with mss.mss() as sct:
-            # 高分屏补丁：直接抓取指定的物理坐标矩形，不针对单个 monitor 索引
+            # 楂樺垎灞忚ˉ涓侊細鐩存帴鎶撳彇鎸囧畾鐨勭墿鐞嗗潗鏍囩煩褰紝涓嶉拡瀵瑰崟涓?monitor 绱㈠紩
             try:
                 screenshot = sct.grab(dock_rect) if dock_rect else sct.grab(sct.monitors[0])
                 save_path = os.path.join(self.records_dir, f"snap_{label}.jpg")
                 mss.tools.to_png(screenshot.rgb, screenshot.size, output=save_path)
-                print(f"[SKILL] 快照保存: {save_path} (Region: {dock_rect})")
+                print(f"[SKILL] 蹇収淇濆瓨: {save_path} (Region: {dock_rect})")
                 return save_path
             except Exception as e:
-                print(f"[SKILL] 截图失败，回切模式: {e}")
+                print(f"[SKILL] 鎴浘澶辫触锛屽洖鍒囨ā寮? {e}")
                 screenshot = sct.grab(sct.monitors[0])
                 save_path = os.path.join(self.records_dir, f"snap_{label}_fallback.jpg")
                 mss.tools.to_png(screenshot.rgb, screenshot.size, output=save_path)
                 return save_path
 
-    def action_click_landmark(self, keywords=["inputs", "input"], offset_y=140, optional=False):
-        """原子积木：地标定位与点击 (Tina 增强版，支持 optional 模式)"""
-        print(f"[SKILL] 开始地标定位，关键词: {keywords} (Optional: {optional})")
-        
-        # 补丁：点击前强制激活窗口，确保点击下发有效
-        self.agent.activate_window(self.agent.profile_name)
-        time.sleep(0.5)
-        
-        view_path = self.action_screenshot("landmark_search")
-        img = cv2.imread(view_path)
-        if img is None:
-            print("[SKILL] 无法读取快照图片，终止。")
-            return False
+    def action_click_template(self, template_name="zoom_icon", threshold=0.6, roi=None, **kwargs):
+        """[V36.1] AI 视觉对位：模板匹配 + V81 地标补扫"""
+        import cv2, numpy as np, os
+        template_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "assets", f"{template_name}.png")
+        if not os.path.exists(template_path):
+            return self.action_click_near_landmark(**kwargs)
+        view_path = self.action_screenshot("vision_search")
+        screen_img = cv2.imread(view_path)
+        template_img = cv2.imread(template_path)
+        if screen_img is None or template_img is None: return False
+        gray_screen = cv2.cvtColor(screen_img, cv2.COLOR_BGR2GRAY)
+        gray_template = cv2.cvtColor(template_img, cv2.COLOR_BGR2GRAY)
+        res = cv2.matchTemplate(cv2.Canny(gray_screen, 50, 150), cv2.Canny(gray_template, 50, 150), cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, max_loc = cv2.minMaxLoc(res)
+        if max_val >= threshold:
+            print(f"  - [Vision Success] Icon matched: {max_val:.2f}")
+            tw, th = template_img.shape[1], template_img.shape[0]
+            return self._physical_click(max_loc[0] + tw // 2, max_loc[1] + th // 2)
+        else:
+            return self.action_click_near_landmark(**kwargs)
 
-        context = self.ocr.read_screen(img)
-        
-        ax, ay = -1, -1
-        for line in context.split('\n'):
-            if any(k.lower() in line.lower() for k in keywords):
-                try:
-                    parts = line.split("坐标: (")[1].split(")")[0].split(",")
-                    cur_ax, cur_ay = int(parts[0]), int(parts[1])
-                    
-                    # 关键补丁：双轴精细屏蔽 (仅遮挡浏览器外框，释放网页边缘内容)
-                    if cur_ay < 160 or cur_ax < 20:
-                        print(f"[SKILL] 忽略非内容区地标 (Edge Buffer): '{line}' at ({cur_ax}, {cur_ay})")
-                        continue
-                        
-                    ax, ay = cur_ax, cur_ay
-                    print(f"[SKILL] 命中【任务核心区】地标文本: '{line}'")
-                    break
-                except: continue
-        
-        if ay == -1: 
-            if optional:
-                print(f"[SKILL] 未找到地标 {keywords}，但由于是可选模式 (Optional)，继续任务。")
-                return True
-            print(f"[SKILL] 错误: 未能在当前物理快照中找到地标 {keywords}。建议使用 AIM 模式重新校准。")
-            return False
-
+    def _physical_click(self, x, y, debug_rect=None):
+        """[V81.0] 物理点击驱动：支持 V81 视觉回显"""
+        import pyautogui, time, os, cv2, numpy as np
         config = self._load_config()
-        if not config: return False
-        
-        base_x, base_y = config['dock_rect']['x'], config['dock_rect']['y']
-        
-        # 补丁：只针对真正的任务输入项（如 Inputs/Source/Output）寻找缩略图中心
-        # 对于 UI 按钮、标签页、标题、弹窗关闭等，必须直接点在文字中心，绝不偏移！
-        task_keywords = ["inputs", "input", "source", "output"]
-        use_thumbnail = any(k.lower() in task_keywords for k in keywords)
-        
-        # 强制排除项：如果命中这些词，绝不使用缩略图模式
-        force_direct = ["multimango", "omni", "continue", "取消", "outlier"]
-        if any(k.lower() in force_direct for k in keywords):
-            use_thumbnail = False
-        
-        tx, ty = -1, -1
-        if use_thumbnail:
-            tx_rel, ty_rel = self._find_thumbnail_center(ax, ay, img)
-            if tx_rel and ty_rel:
-                tx, ty = base_x + tx_rel, base_y + ty_rel
-                print(f"[SKILL] 视觉中心定位成功 (缩略图模式): ({tx}, {ty})")
-        
-        if tx == -1:
-            # 对于 UI 按钮和标签页，直接点击文字中心，不加额外偏移
-            if any(k.lower() in ["取消", "multimango", "outlier", "omni", "continue"] for k in keywords):
-                tx, ty = base_x + ax, base_y + ay
-                print(f"[SKILL] UI 精准原位点击: ({tx}, {ty})")
-            elif offset_y != 140:
-                # 如果用户显式传入了偏移量（包括 0），则严格以此为准
-                tx, ty = base_x + ax, base_y + ay + offset_y
-                print(f"[SKILL] 遵循显式偏移量点击: ({tx}, {ty}) [Offset: {offset_y}]")
-            else:
-                # 默认落入针对评分页中文字段落的 4K 适配方案 (原始 140 偏移)
-                tx, ty = base_x + ax + 30, base_y + ay + 140
-                print(f"[SKILL] 内容文字对位点击 (默认重度偏移模式): ({tx}, {ty})")
+        base_x, base_y = config["dock_rect"]["x"], config["dock_rect"]["y"]
+        target_x, target_y = int(base_x + x), int(base_y + y)
+        try:
+            diag_path = os.path.join(self.records_dir, "click_diagnostic_V62_PRO.jpg")
+            snap_path = os.path.join(self.records_dir, "v81_full_scan.jpg")
+            if not os.path.exists(snap_path): snap_path = os.path.join(self.records_dir, "vision_search.jpg")
+            debug_img = cv2.imread(snap_path) if os.path.exists(snap_path) else np.zeros((1080, 1920, 3), dtype=np.uint8)
+            if debug_rect:
+                rx, ry, rw, rh = debug_rect
+                cv2.rectangle(debug_img, (int(rx), int(ry)), (int(rx + rw), int(ry + rh)), (0, 255, 0), 3)
+            cv2.circle(debug_img, (200, 200), 100, (255, 255, 255), -1)
+            cv2.putText(debug_img, "V81 ACTIVE", (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (255, 255, 255), 5)
+            draw_x, draw_y = int(target_x - base_x), int(target_y - base_y)
+            cv2.drawMarker(debug_img, (draw_x, draw_y), (0, 0, 255), cv2.MARKER_CROSS, 60, 4)
+            cv2.imwrite(diag_path, debug_img)
+        except Exception as e: print(f"  - [Diag Error] {e}")
+        pyautogui.moveTo(target_x, target_y, duration=0.2)
+        time.sleep(0.1); pyautogui.click(); return True
 
-        # 全链路高度加固：物理焦点锁定 + 毫秒级原生点击
-        import win32gui
-        import win32api
-        import win32con
-        
-        # 1. 强制激活并置顶
-        hwnd = win32gui.FindWindow(None, self.agent.profile_name)
-        if hwnd:
-            try:
-                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-                win32gui.SetForegroundWindow(hwnd)
-                time.sleep(0.3)
-            except: pass
-
-        # 2. 物理原语级点击 (三连点确保激活)
-        print(f"[SKILL] 执行最终物理级点击: ({tx}, {ty})")
-        for i in range(2):
-            win32api.SetCursorPos((int(tx), int(ty)))
-            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-            time.sleep(0.05)
-            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-            time.sleep(0.1)
-
-        time.sleep(1.0) 
-        return True
-
-    def action_click_smart(self, keywords=None, rel_x=0, rel_y=0, offset_y=0, optional=False, landmark_image=None, layout_size=None):
-        """
-        全场景鲁棒点击技能 (V26.1: 集成颜色空间结构对位)
-        算法优先级：0. 结构锚点(V26.1) -> 1. 视觉锚点(图标) -> 2. 语义地标(文字) -> 3. 物理对位
-        """
-        print(f"[SKILL] 智能对位点击 | Keywords: {keywords} | Image: {landmark_image} | Size: {layout_size}")
-        
-        # 0. V26.1: 尝试结构对位 (基于 V26 变色龙算法)
-        if layout_size:
-            from src.utils.layout_parser import LayoutParser
-            view_path = self.action_screenshot("structural_reanchor")
-            img = cv2.imread(view_path)
-            if img is not None:
-                # 在记录的相对位置执行颜色探测 (假设窗口缩放一致)
-                # 我们寻找点击中心 (rel_x, rel_y) 周围的颜色块
-                target_block = LayoutParser.detect_color_block(img, rel_x, rel_y)
-                if target_block:
-                    tbx, tby, tbw, tbh = target_block["rect"]
-                    # 如果识别到的块大小与录制时相近 (误差 15%)，认为对位成功
-                    if abs(tbw - layout_size[0]) < tbw*0.15 and abs(tbh - layout_size[1]) < tbh*0.15:
-                        rect_data = self.wm.get_window_rect()
-                        base_x = rect_data["left"] if rect_data else 0
-                        base_y = rect_data["top"] if rect_data else 0
-                        
-                        # 点击目标块的中心
-                        tx = base_x + tbx + tbw/2
-                        ty = base_y + tby + tbh/2 + offset_y
-                        
-                        print(f"[SKILL] V26.1 变色龙结构对位成功! -> 点击: ({tx}, {ty})")
-                        import win32api, win32con
-                        win32api.SetCursorPos((int(tx), int(ty)))
-                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-                        time.sleep(0.05)
-                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-                        return True
-        
-        # 0. 尝试视觉锚点定位 (V19: Icon Template Match)
-        if landmark_image:
-            anchor_path = os.path.join(self.records_dir, landmark_image)
-            if os.path.exists(anchor_path):
-                anchor_img = cv2.imread(anchor_path)
-                view_path = self.action_screenshot("landmark_search")
-                screen_img = cv2.imread(view_path)
-                
-                if anchor_img is not None and screen_img is not None:
-                    # 使用 OpenCv 进行模板匹配
-                    res = cv2.matchTemplate(screen_img, anchor_img, cv2.TM_CCOEFF_NORMED)
-                    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-                    if max_val > 0.8:
-                        # 匹配成功，计算全局坐标 (图标中心为 30,30 因为锚点是 60x60)
-                        rect_data = self.wm.get_window_rect()
-                        base_x = rect_data["left"] if rect_data else 0
-                        base_y = rect_data["top"] if rect_data else 0
-                        
-                        tx = base_x + max_loc[0] + 30
-                        ty = base_y + max_loc[1] + 30
-                        
-                        print(f"[SKILL] 视觉锚点(图标)匹配成功! Score: {max_val:.2f} -> 点击: ({tx}, {ty})")
-                        import win32api, win32con
-                        win32api.SetCursorPos((int(tx), int(ty)))
-                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-                        time.sleep(0.05)
-                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-                        return True
-
-        # 1. 尝试语义定位 (OCR)
-        if keywords:
-            view_path = self.action_screenshot("smart_search")
-            img = cv2.imread(view_path)
-            if img is not None:
-                context = self.ocr.read_screen(img)
-                best_ax, best_ay = -1, -1
-                min_dist = 9999
-                for line in context.split('\n'):
-                    if any(k.lower() in line.lower() for k in keywords):
-                        try:
-                            parts = line.split("坐标: (")[1].split(")")[0].split(",")
-                            ax, ay = int(parts[0]), int(parts[1])
-                            # 计算与预期录制位置的相对距离
-                            dist = ((ax - rel_x)**2 + (ay - rel_y)**2)**0.5
-                            if dist < min_dist:
-                                min_dist = dist
-                                best_ax, best_ay = ax, ay
-                        except: continue
-                
-                # 如果偏差在 120 像素内，认为语义目标正确
-                if best_ay != -1 and min_dist < 120:
-                    rect_data = self.wm.get_window_rect()
-                    base_x = rect_data["left"] if rect_data else 0
-                    base_y = rect_data["top"] if rect_data else 0
-                    tx, ty = base_x + best_ax, base_y + best_ay + offset_y
-                    
-                    print(f"[SKILL] 语义地标(文字)对位成功! 偏差 {min_dist:.1f}px -> 点击: ({tx}, {ty})")
-                    import win32api, win32con
-                    win32api.SetCursorPos((int(tx), int(ty)))
-                    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-                    time.sleep(0.05)
-                    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-                    return True
-
-        # 2. 兜底方案：物理相对坐标
-        rect_data = self.wm.get_window_rect()
-        if rect_data:
-            tx = rect_data["left"] + rel_x
-            ty = rect_data["top"] + rel_y + offset_y
-            print(f"[SKILL] 兜底模式 -> DWM 物理点击: ({tx}, {ty})")
-            import win32api, win32con
-            win32api.SetCursorPos((int(tx), int(ty)))
-            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-            time.sleep(0.05)
-            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-            return True
-            
-        return False
-
+    def action_click_near_landmark(self, anchor_keywords=["Response A"], offset_x=0, offset_y=65, roi=None, **kwargs):
+        """[V81.0 暴力全屏版] 彻底抛弃 ROI，全屏模糊语义搜索"""
+        import pyautogui, time, cv2, numpy as np
+        print(f">>> V81 EXECUTING: FULL SCREEN SCAN <<<")
+        pyautogui.press('esc'); time.sleep(0.5)
+        self.agent.activate_window(self.agent.profile_name)
+        view_path = self.action_screenshot("v81_full_scan")
+        img = cv2.imread(view_path)
+        if img is None: return False
+        ocr_res = self.ocr.reader.readtext(img)
+        candidates = []
+        for r in ocr_res:
+            text = r[1].lower().replace(" ", "")
+            if "respon" in text and "a" in text:
+                cx, cy = ((r[0][0][0] + r[0][1][0]) / 2) / 1.5, ((r[0][0][1] + r[0][2][1]) / 2) / 1.5
+                if cy > 400: candidates.append((cx, cy, r[1]))
+        if not candidates:
+            print(f"  - [V81 ERROR] 未找到地标！")
+            return False
+        candidates.sort(key=lambda x: x[1])
+        ax, ay = candidates[0][0], candidates[0][1]
+        print(f"  - [V81 HIT] 锁定地标: {candidates[0][2]} at ({ax:.0f}, {ay:.0f})")
+        tx_rel, ty_rel, best_rect = self._detect_action_zone(ax, ay, img)
+        if tx_rel and ty_rel:
+            return self._physical_click(tx_rel, ty_rel, debug_rect=best_rect)
+        return self._physical_click(ax + offset_x, ay + offset_y)
     def action_click_landmark_v2(self, keywords=["Inputs", "Earnings"], search_depth=400, optional=False):
-        """原子积木 V2：语义级视觉吸附探测 (实验性方案)"""
-        print(f"[SKILL-V2] 启动语义视觉搜索，目标锚点: {keywords}")
+        """鍘熷瓙绉湪 V2锛氳涔夌骇瑙嗚鍚搁檮鎺㈡祴 (瀹為獙鎬ф柟妗?"""
+        print(f"[SKILL-V2] 鍚姩璇箟瑙嗚鎼滅储锛岀洰鏍囬敋鐐? {keywords}")
         
         import win32gui, win32api, win32con
         import numpy as np
 
-        # 1. 强力对焦锁定
+        # 1. 寮哄姏瀵圭劍閿佸畾
         hwnd = win32gui.FindWindow(None, self.agent.profile_name)
         if hwnd:
             try:
@@ -369,35 +218,33 @@ class MSISkills:
                 time.sleep(0.3)
             except: pass
 
-        # 2. 状态快照
-        view_path = self.action_screenshot("semantic_search")
+        # 2. 鐘舵€佸揩鐓?        view_path = self.action_screenshot("semantic_search")
         img = cv2.imread(view_path)
         if img is None: return False
         
-        # 3. OCR 锚点定位
+        # 3. OCR 閿氱偣瀹氫綅
         context = self.ocr.read_screen(img)
         ax, ay = -1, -1
         for line in context.split('\n'):
             if any(k.lower() in line.lower() for k in keywords):
                 try:
-                    parts = line.split("坐标: (")[1].split(")")[0].split(",")
+                    parts = line.split("鍧愭爣: (")[1].split(")")[0].split(",")
                     cur_ax, cur_ay = int(parts[0]), int(parts[1])
-                    if cur_ay < 160 or cur_ax < 20: continue # 沿用防误触禁区
-                    ax, ay = cur_ax, cur_ay
-                    print(f"[SKILL-V2] 物理锚点锁定: '{line}' at ({ax}, {ay})")
+                    if cur_ay < 160 or cur_ax < 20: continue # 娌跨敤闃茶瑙︾鍖?                    ax, ay = cur_ax, cur_ay
+                    print(f"[SKILL-V2] 鐗╃悊閿氱偣閿佸畾: '{line}' at ({ax}, {ay})")
                     break
                 except: continue
         
         if ay == -1:
             if optional: return True
-            print(f"[SKILL-V2] 锚点未见，搜索失败。")
+            print(f"[SKILL-V2] 閿氱偣鏈锛屾悳绱㈠け璐ャ€?)
             return False
 
-        # 4. 语义视觉探测 (OpenCV 魔法时间)
+        # 4. 璇箟瑙嗚鎺㈡祴 (OpenCV 榄旀硶鏃堕棿)
         h, w, _ = img.shape
-        # 定义搜索扇区: 文字正下方 600px，右侧大幅扩散至 1000px 以覆盖宽屏图标
+        # 瀹氫箟鎼滅储鎵囧尯: 鏂囧瓧姝ｄ笅鏂?400px锛屽乏鍙冲悇鎵╂暎 200px
         roi_y1, roi_y2 = ay, min(ay + search_depth, h)
-        roi_x1, roi_x2 = max(ax - 50, 0), min(ax + 1000, w)
+        roi_x1, roi_x2 = max(ax - 50, 0), min(ax + 350, w)
         roi = img[roi_y1:roi_y2, roi_x1:roi_x2]
         
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
@@ -411,37 +258,32 @@ class MSISkills:
         for cnt in contours:
             x_c, y_c, w_c, h_c = cv2.boundingRect(cnt)
             area = cv2.contourArea(cnt)
-            if 200 < area < 50000 and 0.3 < (w_c/h_c) < 3.0:
-                cx, cy = x_c + w_c//2, y_c + h_c//2
-                dist = ((cx - 0)**2 + (cy - 0)**2)**0.5 
+            # 杩囨护閫昏緫锛氱鍚堝浘鏍?鍗＄墖澶у皬锛屼笖涓嶈兘澶墎鎴栧お缁?            if 1000 < area < 40000 and 0.4 < (w_c/h_c) < 2.5:
+                # 璁＄畻涓庨敋鐐规枃瀛楀簳杈圭紭鐨勮窛绂伙紙瓒婅繎瓒婂ソ锛?                dist = y_c 
                 candidates.append({
-                    'center': (cx, cy),
+                    'center': (x_c + w_c//2, y_c + h_c//2),
                     'dist': dist,
-                    'rect': (x_c, y_c, w_c, h_c),
-                    'area': area
+                    'rect': (x_c, y_c, w_c, h_c)
                 })
                 cv2.rectangle(debug_img, (x_c, y_c), (x_c+w_c, y_c+h_c), (255, 0, 0), 2)
 
         final_tx, final_ty = -1, -1
         if candidates:
-            # 排序：距离文字锚点最近的优先
-            candidates.sort(key=lambda x: x['dist'])
-            print(f"[SKILL-V2] 发现候选块数量: {len(candidates)}, 最近块距离: {candidates[0]['dist']:.1f}, 面积: {candidates[0]['area']}")
+            # 鎺掑簭瀵绘壘鏈€绗﹀悎鈥滅揣閭绘枃瀛椾笅鏂光€濈壒寰佺殑閭ｄ釜鍧?            candidates.sort(key=lambda x: x['dist'])
             best = candidates[0]
             final_tx, final_ty = roi_x1 + best['center'][0], roi_y1 + best['center'][1]
-            # 视觉反馈回填
+            # 瑙嗚鍙嶉鍥炲～
             cv2.drawMarker(debug_img, best['center'], (0, 255, 0), cv2.MARKER_CROSS, 30, 3)
-            print(f"[SKILL-V2] 语义特征吸附成功: ({final_tx}, {final_ty})")
+            print(f"[SKILL-V2] 璇箟鐗瑰緛鍚搁檮鎴愬姛: ({final_tx}, {final_ty})")
         
-        # 保存诊断图
-        debug_path = os.path.join(r"D:\Dev\autoplay\records", "semantic_debug.jpg")
+        # 淇濆瓨璇婃柇鍥?        debug_path = os.path.join(r"D:\Dev\autoplay\records", "semantic_debug.jpg")
         cv2.imwrite(debug_path, debug_img)
         
         if final_tx == -1:
-            print("[SKILL-V2] 未能识别到显著特征块，降级使用物理偏移。")
-            final_tx, final_ty = ax + 30, ay + 140 # 降级回版本 1
+            print("[SKILL-V2] 鏈兘璇嗗埆鍒版樉钁楃壒寰佸潡锛岄檷绾т娇鐢ㄧ墿鐞嗗亸绉汇€?)
+            final_tx, final_ty = ax + 30, ay + 140 # 闄嶇骇鍥炵増鏈?1
         
-        # 5. 执行物理原语点击
+        # 5. 鎵ц鐗╃悊鍘熻鐐瑰嚮
         config = self._load_config()
         base_x, base_y = config['dock_rect']['x'], config['dock_rect']['y']
         real_tx, real_ty = base_x + final_tx, base_y + final_ty
@@ -453,7 +295,7 @@ class MSISkills:
             win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
             time.sleep(0.1)
             
-        print(f"[SKILL-V2] 执行完成。")
+        print(f"[SKILL-V2] 鎵ц瀹屾垚銆?)
         return True
 
     def _find_thumbnail_center(self, ax, ay, img):
@@ -465,18 +307,18 @@ class MSISkills:
         for cnt in contours:
             rx, ry, rw, rh = cv2.boundingRect(cnt)
             if 50 < rw < 200 and 50 < rh < 200:
-                print(f"[SKILL] 探测到潜在缩略图区域: {rw}x{rh}")
+                print(f"[SKILL] 鎺㈡祴鍒版綔鍦ㄧ缉鐣ュ浘鍖哄煙: {rw}x{rh}")
                 return rx + max(ax-100, 0) + rw // 2, ry + ay + rh // 2
         return None, None
 
     def action_wait_visual(self, threshold=5.0, timeout=12):
-        """原子积木：视觉变化等待 (已增敏)"""
+        """鍘熷瓙绉湪锛氳瑙夊彉鍖栫瓑寰?(宸插鏁?"""
         config = self._load_config()
         if not config: return False
         raw = config["dock_rect"]
         monitor = {"left": raw["x"], "top": raw["y"], "width": raw["width"], "height": raw["height"]}
         
-        print(f"[SKILL] 正在监测画面变化 (阈值: {threshold}%, 超时: {timeout}s)...")
+        print(f"[SKILL] 姝ｅ湪鐩戞祴鐢婚潰鍙樺寲 (闃堝€? {threshold}%, 瓒呮椂: {timeout}s)...")
         with mss.mss() as sct:
             base_frame = np.array(sct.grab(monitor))
             base_img = cv2.cvtColor(base_frame, cv2.COLOR_BGRA2GRAY)
@@ -490,58 +332,33 @@ class MSISkills:
                 roi_diff = diff_thresh[y1:y1+roi_h, x1:x1+roi_w]
                 change_val = (cv2.countNonZero(roi_diff) / (roi_h * roi_w)) * 100
                 if change_val > threshold: 
-                    print(f"[SKILL] 检测到画面变化完成! ({change_val:.2f}%)")
+                    print(f"[SKILL] 妫€娴嬪埌鐢婚潰鍙樺寲瀹屾垚! ({change_val:.2f}%)")
                     return True
                 time.sleep(0.5)
-        print("[SKILL] 画面监测超时，未发现预期变化。")
+        print("[SKILL] 鐢婚潰鐩戞祴瓒呮椂锛屾湭鍙戠幇棰勬湡鍙樺寲銆?)
         return False
 
     def action_press_keys(self, keys=["down"], interval=0.5):
-        """原子积木：按键序列注入 (支持固定值或范围字符串)"""
-        import random
-        # 1. 解析间隔参数
-        actual_interval = 0.5
-        try:
-            if isinstance(interval, str) and "-" in interval:
-                min_i, max_i = map(float, interval.split("-"))
-                actual_interval = random.uniform(min_i, max_i)
-            else:
-                actual_interval = float(interval)
-        except Exception as e:
-            print(f"[SKILL] 间隔参数解析警告: {e}，使用默认值 0.5")
-            actual_interval = 0.5
-
-        # 2. 增加拟人化随机微调 (0.9x - 1.1x)
-        adj_interval = actual_interval * random.uniform(0.9, 1.1)
-        print(f"[SKILL] 注入按键: {keys}, 最终计算间隔: {adj_interval:.2f}s")
-        
-        # 3. 激活窗口
+        """鍘熷瓙绉湪锛氭寜閿簭鍒楁敞鍏?(鐢?Agent 澶勭悊闅忔満闂撮殧)"""
+        print(f"[SKILL] 娉ㄥ叆鎸夐敭: {keys}, 棰勮闂撮殧: {interval}")
         config = self._load_config()
         if config:
             data = config['dock_rect']
             cx, cy = data['x'] + data['width'] // 2, data['y'] + data['height'] // 2
-            self.agent.activate_window(self.agent.profile_name)
-            time.sleep(0.3)
-            # 在中心点轻微点击以确保焦点
-            import win32api, win32con
-            win32api.SetCursorPos((int(cx), int(cy)))
-            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-            time.sleep(0.05)
-            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+            self.agent.double_click_at(cx, cy)
             time.sleep(0.5)
-            
-        self.agent.press_key_sequence(keys, interval=adj_interval, hold_time=random.uniform(0.1, 0.2))
+        self.agent.press_key_sequence(keys, interval=interval, hold_time=0.15)
         return True
 
     def action_zoom_pan_reset(self, landmark_keywords=["ref"], scroll_amount=15,
                                pan_dx=180, pan_dy=100, reset_by_double_click=True):
         """
-        原子积木：深度巡航控制 (物理内核硬化版)
+        鍘熷瓙绉湪锛氭繁搴﹀贰鑸帶鍒?(鐗╃悊鍐呮牳纭寲鐗?
         """
         import win32gui, win32api, win32con
-        print(f"\n[SKILL] 正在执行 Win32 暴力巡航: {landmark_keywords}")
+        print(f"\n[SKILL] 姝ｅ湪鎵ц Win32 鏆村姏宸¤埅: {landmark_keywords}")
 
-        # --- Step 1: 物理激活与视图自动回正 ---
+        # --- Step 1: 鐗╃悊婵€娲讳笌瑙嗗浘鑷姩鍥炴 ---
         hwnd = win32gui.FindWindow(None, self.agent.profile_name)
         if hwnd:
             try:
@@ -550,8 +367,8 @@ class MSISkills:
                 time.sleep(0.3)
             except: pass
 
-        # 辅助对位：执行前发送物理 LEFT，确保在 Response A
-        # 补丁：连点两次并增加时延，确保 UI 状态机在远程桌面上完成切换
+        # 杈呭姪瀵逛綅锛氭墽琛屽墠鍙戦€佺墿鐞?LEFT锛岀‘淇濆湪 Response A
+        # 琛ヤ竵锛氳繛鐐逛袱娆″苟澧炲姞鏃跺欢锛岀‘淇?UI 鐘舵€佹満鍦ㄨ繙绋嬫闈笂瀹屾垚鍒囨崲
         for _ in range(2):
             win32api.keybd_event(win32con.VK_LEFT, 0, 0, 0)
             time.sleep(0.05)
@@ -559,34 +376,34 @@ class MSISkills:
             time.sleep(0.2)
         time.sleep(0.8)
 
-        # --- Step 1: 找到地标位置 ---
+        # --- Step 1: 鎵惧埌鍦版爣浣嶇疆 ---
         view_path = self.action_screenshot("ref_search")
         img = cv2.imread(view_path)
         context = self.ocr.read_screen(img)
 
         ax, ay = -1, -1
-        # 预加载容错关键词：针对常见的 OCR 误读进行静默增强
+        # 棰勫姞杞藉閿欏叧閿瘝锛氶拡瀵瑰父瑙佺殑 OCR 璇杩涜闈欓粯澧炲己
         if any(k.lower() in ["response", "response a", "response b"] for k in landmark_keywords):
             landmark_keywords = list(set(landmark_keywords + ["rosponse", "respon", "rospon", "rosponse a", "rosponse b", "rbbponse", "rason", "roso"]))
 
         for line in context.split('\n'):
             if any(k.lower() in line.lower() for k in landmark_keywords):
                 try:
-                    parts = line.split("坐标: (")[1].split(")")[0].split(",")
+                    parts = line.split("鍧愭爣: (")[1].split(")")[0].split(",")
                     cur_ax, cur_ay = int(parts[0]), int(parts[1])
                     
-                    # 关键补丁：双轴过滤，防止误触浏览器 UI
+                    # 鍏抽敭琛ヤ竵锛氬弻杞磋繃婊わ紝闃叉璇Е娴忚鍣?UI
                     if cur_ay < 160 or cur_ax < 20: 
-                        print(f"[SKILL] 忽略非对焦区地标 (Anti-Interference): '{line}' at ({cur_ax}, {cur_ay})")
+                        print(f"[SKILL] 蹇界暐闈炲鐒﹀尯鍦版爣 (Anti-Interference): '{line}' at ({cur_ax}, {cur_ay})")
                         continue
                         
                     ax, ay = cur_ax, cur_ay
-                    print(f"[SKILL] 命中物理巡航锚点: ({ax}, {ay})")
+                    print(f"[SKILL] 鍛戒腑鐗╃悊宸¤埅閿氱偣: ({ax}, {ay})")
                     break
                 except: continue
 
         if ay == -1:
-            print(f"[SKILL] 警告: 未能发现地标 {landmark_keywords}，启用中心点对焦兜底。")
+            print(f"[SKILL] 璀﹀憡: 鏈兘鍙戠幇鍦版爣 {landmark_keywords}锛屽惎鐢ㄤ腑蹇冪偣瀵圭劍鍏滃簳銆?)
             config = self._load_config()
             ax, ay = config['dock_rect']['width'] // 2, config['dock_rect']['height'] // 2
 
@@ -595,7 +412,7 @@ class MSISkills:
         base_x = config['dock_rect']['x']
         base_y = config['dock_rect']['y']
 
-        # --- 最终物理内核执行序列 ---
+        # --- 鏈€缁堢墿鐞嗗唴鏍告墽琛屽簭鍒?---
         actual_scroll = scroll_amount
         if isinstance(scroll_amount, str) and "-" in scroll_amount:
             try:
@@ -608,7 +425,7 @@ class MSISkills:
             except: pass
 
         target_x, target_y = int(base_x + ax), int(base_y + ay + 250)
-        print(f"[SKILL] 执行 Win32 物理对焦 ({target_x}, {target_y}) 与缩放 x{actual_scroll}")
+        print(f"[SKILL] 鎵ц Win32 鐗╃悊瀵圭劍 ({target_x}, {target_y}) 涓庣缉鏀?x{actual_scroll}")
         
         for _ in range(3):
             win32api.SetCursorPos((target_x, target_y))
@@ -618,13 +435,13 @@ class MSISkills:
             time.sleep(0.1)
 
         for _ in range(abs(actual_scroll)):
-            # 根据正负号决定方向 (120 为向上/放大, -120 为向下/缩小)
+            # 鏍规嵁姝ｈ礋鍙峰喅瀹氭柟鍚?(120 涓哄悜涓?鏀惧ぇ, -120 涓哄悜涓?缂╁皬)
             direction = 120 if actual_scroll > 0 else -120
             win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, direction, 0)
             time.sleep(0.05)
         time.sleep(0.6)
 
-        print(f"[SKILL] 执行物理流平移: dx={pan_dx}, dy={pan_dy}")
+        print(f"[SKILL] 鎵ц鐗╃悊娴佸钩绉? dx={pan_dx}, dy={pan_dy}")
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
         time.sleep(0.3)
         steps = 15
@@ -638,7 +455,7 @@ class MSISkills:
         time.sleep(0.8)
 
         if reset_by_double_click:
-            print("[SKILL] 执行物理双击还原")
+            print("[SKILL] 鎵ц鐗╃悊鍙屽嚮杩樺師")
             win32api.SetCursorPos((target_x, target_y))
             for _ in range(2):
                 win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
@@ -649,7 +466,7 @@ class MSISkills:
         return True
 
     def action_zoom(self, amount=5):
-        """原子积木：纯粹的物理滚轮缩放 (支持随机)"""
+        """鍘熷瓙绉湪锛氱函绮圭殑鐗╃悊婊氳疆缂╂斁 (鏀寔闅忔満)"""
         actual_amount = amount
         if isinstance(amount, str) and "-" in amount:
             try:
@@ -661,7 +478,7 @@ class MSISkills:
                 actual_amount = random.randint(int(amount[0]), int(amount[1]))
             except: pass
             
-        print(f"[SKILL] 执行物理缩放: {actual_amount}")
+        print(f"[SKILL] 鎵ц鐗╃悊缂╂斁: {actual_amount}")
         import win32api, win32con
         direction = 120 if actual_amount > 0 else -120
         for _ in range(abs(actual_amount)):
@@ -676,26 +493,23 @@ class MSISkills:
                                            circle_radius=70,
                                            circle_steps=24):
         """
-        原子积木 - 第 5 步完整链路:
-        1. 点击 SOURCE 左侧缩略图
-        2. 按下向下方向键触发导航
-        3. 等待右侧 Response A 大图出现
-        4. 点击该大图
-        5. 滚轮 Zoom In
-        6. 按住左键绕圆圈 PAN
-        7. 双击还原
+        鍘熷瓙绉湪 - 绗?5 姝ュ畬鏁撮摼璺?
+        1. 鐐瑰嚮 SOURCE 宸︿晶缂╃暐鍥?        2. 鎸変笅鍚戜笅鏂瑰悜閿Е鍙戝鑸?        3. 绛夊緟鍙充晶 Response A 澶у浘鍑虹幇
+        4. 鐐瑰嚮璇ュぇ鍥?        5. 婊氳疆 Zoom In
+        6. 鎸変綇宸﹂敭缁曞渾鍦?PAN
+        7. 鍙屽嚮杩樺師
         """
         import pydirectinput
         import win32api, win32con, math
 
-        print(f"\n[SKILL] 执行 Source->Down->ResponseA->Zoom->Circle->Reset")
+        print(f"\n[SKILL] 鎵ц Source->Down->ResponseA->Zoom->Circle->Reset")
 
         config = self._load_config()
         if not config: return False
         base_x = config['dock_rect']['x']
         base_y = config['dock_rect']['y']
 
-        # Step 1: OCR 找 SOURCE 地标
+        # Step 1: OCR 鎵?SOURCE 鍦版爣
         view_path = self.action_screenshot("source_nav")
         img = cv2.imread(view_path)
         context = self.ocr.read_screen(img)
@@ -703,56 +517,53 @@ class MSISkills:
         for line in context.split('\n'):
             if any(k.lower() in line.lower() for k in source_keywords):
                 try:
-                    parts = line.split("坐标: (")[1].split(")")[0].split(",")
+                    parts = line.split("鍧愭爣: (")[1].split(")")[0].split(",")
                     src_x, src_y = int(parts[0]), int(parts[1])
                     break
                 except: continue
 
         if src_y == -1:
-            print("[SKILL] 未找到 SOURCE，终止。")
+            print("[SKILL] 鏈壘鍒?SOURCE锛岀粓姝€?)
             return False
 
-        # 点击 SOURCE 下方小图标
-        self.agent.click_at(base_x + src_x, base_y + src_y + 80)
+        # 鐐瑰嚮 SOURCE 涓嬫柟灏忓浘鏍?        self.agent.click_at(base_x + src_x, base_y + src_y + 80)
         time.sleep(0.5)
 
-        # Step 2: 按下方向键
-        pydirectinput.keyDown('down'); time.sleep(0.15); pydirectinput.keyUp('down')
+        # Step 2: 鎸変笅鏂瑰悜閿?        pydirectinput.keyDown('down'); time.sleep(0.15); pydirectinput.keyUp('down')
         time.sleep(1.0)
 
-        # Step 3: 等待 Response A 出现 (已增敏)
+        # Step 3: 绛夊緟 Response A 鍑虹幇 (宸插鏁?
         self.action_wait_visual(threshold=5.0, timeout=8)
 
-        # Step 4: 重新截图找 Response A 大图
+        # Step 4: 閲嶆柊鎴浘鎵?Response A 澶у浘
         img2 = cv2.imread(self.action_screenshot("response_a"))
         context2 = self.ocr.read_screen(img2)
         resp_x, resp_y = -1, -1
         for line in context2.split('\n'):
             if any(k.lower() in line.lower() for k in response_keywords):
                 try:
-                    parts = line.split("坐标: (")[1].split(")")[0].split(",")
+                    parts = line.split("鍧愭爣: (")[1].split(")")[0].split(",")
                     resp_x, resp_y = int(parts[0]), int(parts[1])
                     break
                 except: continue
 
         if resp_y == -1:
-            print("[SKILL] 未找到 Response A，终止。")
+            print("[SKILL] 鏈壘鍒?Response A锛岀粓姝€?)
             return False
 
-        # Response A 文字右侧大图（+偏移）
-        img_x = base_x + resp_x + 150
+        # Response A 鏂囧瓧鍙充晶澶у浘锛?鍋忕Щ锛?        img_x = base_x + resp_x + 150
         img_y = base_y + resp_y + 60
         self.agent.click_at(img_x, img_y)
         time.sleep(0.4)
 
-        # Step 5: 滚轮 Zoom In
+        # Step 5: 婊氳疆 Zoom In
         pydirectinput.moveTo(img_x, img_y)
         for _ in range(scroll_amount):
             win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, 120, 0)
             time.sleep(0.15)
         time.sleep(0.5)
 
-        # Step 6: 圆圈 PAN
+        # Step 6: 鍦嗗湀 PAN
         pydirectinput.moveTo(img_x + circle_radius, img_y)
         pydirectinput.mouseDown(button='left')
         time.sleep(0.1)
@@ -766,10 +577,10 @@ class MSISkills:
         pydirectinput.mouseUp(button='left')
         time.sleep(0.5)
 
-        # Step 7: 双击还原
+        # Step 7: 鍙屽嚮杩樺師
         pydirectinput.doubleClick(img_x, img_y)
         time.sleep(0.3)
-        print("[SKILL] Source->Navigate->Zoom->Circle->Reset 完成。")
+        print("[SKILL] Source->Navigate->Zoom->Circle->Reset 瀹屾垚銆?)
         return True
 
     def action_output_navigate_zoom_circle_reverse(self,
@@ -781,114 +592,108 @@ class MSISkills:
                                                     circle_radius=100,
                                                     circle_steps=30):
         """
-        原子积木 - 第 6 步完整链路（反向大圆圈版）:
-        1. 点击 OUTPUT 下方左侧小图标
-        2. 按下向右方向键
-        3. 等待 Response B 出现
-        4. 点击 Response B 大图
-        5. Zoom In 大幅放大
-        6. Zoom Out 缩回
-        7. Zoom In 微调放大
-        8. 反方向大圆圈 PAN（逆时针）
-        9. 双击还原
+        鍘熷瓙绉湪 - 绗?6 姝ュ畬鏁撮摼璺紙鍙嶅悜澶у渾鍦堢増锛?
+        1. 鐐瑰嚮 OUTPUT 涓嬫柟宸︿晶灏忓浘鏍?        2. 鎸変笅鍚戝彸鏂瑰悜閿?        3. 绛夊緟 Response B 鍑虹幇
+        4. 鐐瑰嚮 Response B 澶у浘
+        5. Zoom In 澶у箙鏀惧ぇ
+        6. Zoom Out 缂╁洖
+        7. Zoom In 寰皟鏀惧ぇ
+        8. 鍙嶆柟鍚戝ぇ鍦嗗湀 PAN锛堥€嗘椂閽堬級
+        9. 鍙屽嚮杩樺師
         """
         import pydirectinput
         import win32api, win32con, math
 
-        print(f"\n[SKILL] 执行 Output->Right->ResponseB->ZoomInOut->ReversePAN->Reset")
+        print(f"\n[SKILL] 鎵ц Output->Right->ResponseB->ZoomInOut->ReversePAN->Reset")
 
         config = self._load_config()
         if not config: return False
         base_x = config['dock_rect']['x']
         base_y = config['dock_rect']['y']
 
-        # Step 1: OCR 找 OUTPUT 地标
+        # Step 1: OCR 鎵?OUTPUT 鍦版爣
         img = cv2.imread(self.action_screenshot("output_nav"))
         context = self.ocr.read_screen(img)
         out_x, out_y = -1, -1
         for line in context.split('\n'):
             if any(k.lower() in line.lower() for k in output_keywords):
                 try:
-                    parts = line.split("坐标: (")[1].split(")")[0].split(",")
+                    parts = line.split("鍧愭爣: (")[1].split(")")[0].split(",")
                     out_x, out_y = int(parts[0]), int(parts[1])
-                    print(f"[DEBUG] 找到 OUTPUT 文字坐标: ({out_x}, {out_y})")
+                    print(f"[DEBUG] 鎵惧埌 OUTPUT 鏂囧瓧鍧愭爣: ({out_x}, {out_y})")
                     break
                 except: continue
 
         if out_y == -1:
-            print("[SKILL] 未找到 OUTPUT，终止。")
+            print("[SKILL] 鏈壘鍒?OUTPUT锛岀粓姝€?)
             return False
 
-        # 计算图标物理坐标：通常图标在文字下方，左侧图标稍微偏左
+        # 璁＄畻鍥炬爣鐗╃悊鍧愭爣锛氶€氬父鍥炬爣鍦ㄦ枃瀛椾笅鏂癸紝宸︿晶鍥炬爣绋嶅井鍋忓乏
         target_icon_x = base_x + out_x - 40 
         target_icon_y = base_y + out_y + 90
         
-        # --- 增强视觉表现：先移动到位置 ---
-        print(f"[SKILL] 正在移动到 OUTPUT 图标: ({target_icon_x}, {target_icon_y})")
+        # --- 澧炲己瑙嗚琛ㄧ幇锛氬厛绉诲姩鍒颁綅缃?---
+        print(f"[SKILL] 姝ｅ湪绉诲姩鍒?OUTPUT 鍥炬爣: ({target_icon_x}, {target_icon_y})")
         pydirectinput.moveTo(target_icon_x, target_icon_y, duration=0.5) 
         time.sleep(0.3)
         
-        # 激活窗口确保按键有效
-        self.agent.activate_window(self.agent.profile_name) 
+        # 婵€娲荤獥鍙ｇ‘淇濇寜閿湁鏁?        self.agent.activate_window(self.agent.profile_name) 
         
-        # 确切点击
+        # 纭垏鐐瑰嚮
         self.agent.click_at(target_icon_x, target_icon_y)
         time.sleep(0.5)
 
-        # Step 2: 按右方向键
-        print("[SKILL] 发送 RIGHT 方向键控制...")
+        # Step 2: 鎸夊彸鏂瑰悜閿?        print("[SKILL] 鍙戦€?RIGHT 鏂瑰悜閿帶鍒?..")
         pydirectinput.press('right')
         
-        # --- Step 3: 极致鲁棒等待 Response B (模糊匹配 + 按键重试) ---
-        print("[SKILL] 正在等待右侧 Response B 加载...")
+        # --- Step 3: 鏋佽嚧椴佹绛夊緟 Response B (妯＄硦鍖归厤 + 鎸夐敭閲嶈瘯) ---
+        print("[SKILL] 姝ｅ湪绛夊緟鍙充晶 Response B 鍔犺浇...")
         wait_start = time.time()
         resp_x, resp_y = -1, -1
         has_retried_key = False
         
-        while time.time() - wait_start < 15: # 延长到15秒
-            view_path = self.action_screenshot("polling_resp_b")
+        while time.time() - wait_start < 15: # 寤堕暱鍒?5绉?            view_path = self.action_screenshot("polling_resp_b")
             img2 = cv2.imread(view_path)
             context2 = self.ocr.read_screen(img2)
             
             for line in context2.split('\n'):
                 l_line = line.lower()
-                # 模糊匹配：只要有 response 且在右半区 (base_x+300以右)
+                # 妯＄硦鍖归厤锛氬彧瑕佹湁 response 涓斿湪鍙冲崐鍖?(base_x+300浠ュ彸)
                 if "response" in l_line and "response a" not in l_line:
                     try:
-                        parts = line.split("坐标: (")[1].split(")")[0].split(",")
+                        parts = line.split("鍧愭爣: (")[1].split(")")[0].split(",")
                         cur_x, cur_y = int(parts[0]), int(parts[1])
                         
-                        # 位置校验：Response B 必在右侧
+                        # 浣嶇疆鏍￠獙锛歊esponse B 蹇呭湪鍙充晶
                         if cur_x > 350: 
                             resp_x, resp_y = cur_x, cur_y
-                            print(f"[SKILL] 模糊匹配锁定右侧目标: {line}")
+                            print(f"[SKILL] 妯＄硦鍖归厤閿佸畾鍙充晶鐩爣: {line}")
                             break
                     except: continue
             
             if resp_x != -1: break
             
-            # 补丁：如果等待超过 4 秒还没动静，可能是按键丢了，重按一次
-            if (time.time() - wait_start) > 4.0 and not has_retried_key:
-                print("[SKILL] 页面未响应，尝试重按 RIGHT 键...")
+            # 琛ヤ竵锛氬鏋滅瓑寰呰秴杩?4 绉掕繕娌″姩闈欙紝鍙兘鏄寜閿涪浜嗭紝閲嶆寜涓€娆?            if (time.time() - wait_start) > 4.0 and not has_retried_key:
+                print("[SKILL] 椤甸潰鏈搷搴旓紝灏濊瘯閲嶆寜 RIGHT 閿?..")
                 pydirectinput.press('right')
                 has_retried_key = True
 
-            print(f"[SKILL] 搜索中... (已等 {int(time.time()-wait_start)}s)")
+            print(f"[SKILL] 鎼滅储涓?.. (宸茬瓑 {int(time.time()-wait_start)}s)")
             time.sleep(1.2)
 
         if resp_x == -1:
-            print("[SKILL] 严重警告: 15秒内未能在右侧锁定目标。")
+            print("[SKILL] 涓ラ噸璀﹀憡: 15绉掑唴鏈兘鍦ㄥ彸渚ч攣瀹氱洰鏍囥€?)
             return False
 
-        # --- Step 4: 渲染缓冲 (给大图片 2.0 秒加载时间) ---
-        print("[SKILL] 目标已锁定，正在等待高清大图稳定渲染...")
+        # --- Step 4: 娓叉煋缂撳啿 (缁欏ぇ鍥剧墖 2.0 绉掑姞杞芥椂闂? ---
+        print("[SKILL] 鐩爣宸查攣瀹氾紝姝ｅ湪绛夊緟楂樻竻澶у浘绋冲畾娓叉煋...")
         time.sleep(2.0)
 
-        # 最终确定大图中心坐标 (Response B 文字右侧)
+        # 鏈€缁堢‘瀹氬ぇ鍥句腑蹇冨潗鏍?(Response B 鏂囧瓧鍙充晶)
         img_x = base_x + resp_x + 150
         img_y = base_y + resp_y + 60
         
-        print(f"[SKILL] 渲染就绪，准备开始变速缩放交互...")
+        print(f"[SKILL] 娓叉煋灏辩华锛屽噯澶囧紑濮嬪彉閫熺缉鏀句氦浜?..")
         self.agent.click_at(img_x, img_y)
         time.sleep(0.4)
         pydirectinput.moveTo(img_x, img_y)
@@ -898,8 +703,8 @@ class MSISkills:
                 win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, 120 * direction, 0)
                 time.sleep(0.15)
 
-        # Step 5: 大幅 Zoom In
-        print(f"[SKILL] Zoom In 大 x{zoom_in_big}")
+        # Step 5: 澶у箙 Zoom In
+        print(f"[SKILL] Zoom In 澶?x{zoom_in_big}")
         scroll(zoom_in_big, 1)
         time.sleep(0.4)
 
@@ -908,19 +713,17 @@ class MSISkills:
         scroll(zoom_out, -1)
         time.sleep(0.4)
 
-        # Step 7: 微幅 Zoom In
-        print(f"[SKILL] Zoom In 小 x{zoom_in_small}")
+        # Step 7: 寰箙 Zoom In
+        print(f"[SKILL] Zoom In 灏?x{zoom_in_small}")
         scroll(zoom_in_small, 1)
         time.sleep(0.5)
 
-        # Step 8: 反方向大圆圈 PAN（逆时针，angle 递减）
-        print(f"[SKILL] 逆时针大圆圈 PAN (R={circle_radius})")
+        # Step 8: 鍙嶆柟鍚戝ぇ鍦嗗湀 PAN锛堥€嗘椂閽堬紝angle 閫掑噺锛?        print(f"[SKILL] 閫嗘椂閽堝ぇ鍦嗗湀 PAN (R={circle_radius})")
         pydirectinput.moveTo(img_x + circle_radius, img_y)
         pydirectinput.mouseDown(button='left')
         time.sleep(0.1)
         for step in range(circle_steps + 1):
-            angle = -2 * math.pi * step / circle_steps  # 负号 = 逆时针
-            pydirectinput.moveTo(
+            angle = -2 * math.pi * step / circle_steps  # 璐熷彿 = 閫嗘椂閽?            pydirectinput.moveTo(
                 img_x + int(circle_radius * math.cos(angle)),
                 img_y + int(circle_radius * math.sin(angle))
             )
@@ -928,16 +731,16 @@ class MSISkills:
         pydirectinput.mouseUp(button='left')
         time.sleep(0.5)
 
-        # Step 9: 双击还原
+        # Step 9: 鍙屽嚮杩樺師
         pydirectinput.doubleClick(img_x, img_y)
         time.sleep(0.3)
-        print("[SKILL] Output->Right->ResponseB->Zoom->ReversePAN->Reset 完成。")
+        print("[SKILL] Output->Right->ResponseB->Zoom->ReversePAN->Reset 瀹屾垚銆?)
         return True
 
     def action_scroll_home_end(self, direction="end"):
-        """原子积木：最高等级物理滚动 (内容区对焦版)"""
+        """鍘熷瓙绉湪锛氭渶楂樼瓑绾х墿鐞嗘粴鍔?(鍐呭鍖哄鐒︾増)"""
         import pydirectinput
-        print(f"[SKILL] 正在启动内容区强力滚动: {direction}")
+        print(f"[SKILL] 姝ｅ湪鍚姩鍐呭鍖哄己鍔涙粴鍔? {direction}")
         
         self.agent.activate_window(self.agent.profile_name)
         time.sleep(0.3)
@@ -945,9 +748,8 @@ class MSISkills:
         config = self._load_config()
         if not config: return False
         
-        # 核心改进：寻找内容区的标志性地标文字进行对焦点击，确保滚动针对内容窗格
-        # 针对 4K 竖屏扩充关键词雷达: 加入 Elo, Guidelines, Mango 等
-        view_path = self.action_screenshot("scroll_focus")
+        # 鏍稿績鏀硅繘锛氬鎵惧唴瀹瑰尯鐨勬爣蹇楁€у湴鏍囨枃瀛楄繘琛屽鐒︾偣鍑伙紝纭繚婊氬姩閽堝鍐呭绐楁牸
+        # 閽堝 4K 绔栧睆鎵╁厖鍏抽敭璇嶉浄杈? 鍔犲叆 Elo, Guidelines, Mango 绛?        view_path = self.action_screenshot("scroll_focus")
         img = cv2.imread(view_path)
         if img is None: return False
         
@@ -958,47 +760,45 @@ class MSISkills:
         for line in context.split('\n'):
             if any(k.lower() in line.lower() for k in target_kws):
                 try:
-                    parts = line.split("坐标: (")[1].split(")")[0].split(",")
+                    parts = line.split("鍧愭爣: (")[1].split(")")[0].split(",")
                     ax, ay = int(parts[0]), int(parts[1])
                     
-                    # 关键补丁：双轴坐标过滤 (精修版)
-                    # 1. 忽略窗口顶部 160 像素内的地标（仅遮挡标签栏/地址栏/书签栏）
-                    # 2. 忽略极窄侧边 20 像素内的地标（基本防误触）
-                    if ay < 160 or ax < 20:
-                        print(f"[SKILL] 忽略非内容区地标 (System UI Buffer): '{line}' at ({ax}, {ay})")
+                    # 鍏抽敭琛ヤ竵锛氬弻杞村潗鏍囪繃婊?(绮句慨鐗?
+                    # 1. 蹇界暐绐楀彛椤堕儴 160 鍍忕礌鍐呯殑鍦版爣锛堜粎閬尅鏍囩鏍?鍦板潃鏍?涔︾鏍忥級
+                    # 2. 蹇界暐鏋佺獎渚ц竟 20 鍍忕礌鍐呯殑鍦版爣锛堝熀鏈槻璇Е锛?                    if ay < 160 or ax < 20:
+                        print(f"[SKILL] 蹇界暐闈炲唴瀹瑰尯鍦版爣 (System UI Buffer): '{line}' at ({ax}, {ay})")
                         continue
                         
                     focus_x = config['dock_rect']['x'] + ax
                     focus_y = config['dock_rect']['y'] + ay
-                    print(f"[SKILL] 命中【任务核心区】地标 '{line}'，执行点击对焦...")
+                    print(f"[SKILL] 鍛戒腑銆愪换鍔℃牳蹇冨尯銆戝湴鏍?'{line}'锛屾墽琛岀偣鍑诲鐒?..")
                     break
                 except: continue
                 
         if focus_x == -1:
-            # 降级方案：点击目标窗口左侧 1/4 处，确保避开中间空窗区
-            print("[SKILL] 未发现地标文案，启动区域纠偏对焦 (Region-Based)...")
+            # 闄嶇骇鏂规锛氱偣鍑荤洰鏍囩獥鍙ｅ乏渚?1/4 澶勶紝纭繚閬垮紑涓棿绌虹獥鍖?            print("[SKILL] 鏈彂鐜板湴鏍囨枃妗堬紝鍚姩鍖哄煙绾犲亸瀵圭劍 (Region-Based)...")
             focus_x = config['dock_rect']['x'] + (config['dock_rect']['width'] // 4)
             focus_y = config['dock_rect']['y'] + (config['dock_rect']['height'] // 3)
             
-        # 全链路加固：强制物理焦点锁定
+        # 鍏ㄩ摼璺姞鍥猴細寮哄埗鐗╃悊鐒︾偣閿佸畾
         import win32gui
         import win32api
         import win32con
         
-        # 1. 强力激活目标窗口 (Window-Level Focus)
+        # 1. 寮哄姏婵€娲荤洰鏍囩獥鍙?(Window-Level Focus)
         hwnd = win32gui.FindWindow(None, self.agent.profile_name)
         if hwnd:
-            print(f"[SKILL] 正在强制置顶目标窗口 [HWND:{hwnd}]...")
+            print(f"[SKILL] 姝ｅ湪寮哄埗缃《鐩爣绐楀彛 [HWND:{hwnd}]...")
             try:
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
                 win32gui.SetForegroundWindow(hwnd)
                 time.sleep(0.3)
             except Exception as e:
-                print(f"[SKILL] 窗口置顶提示: {e}")
+                print(f"[SKILL] 绐楀彛缃《鎻愮ず: {e}")
 
-        # 执行三连击确保激活容器 (改用底层 win32api 绕过 pydirectinput 的远程环境卡顿)
+        # 鎵ц涓夎繛鍑荤‘淇濇縺娲诲鍣?(鏀圭敤搴曞眰 win32api 缁曡繃 pydirectinput 鐨勮繙绋嬬幆澧冨崱椤?
         for i in range(3):
-            print(f"[SKILL] 正在执行底层对焦点击 {i+1}/3 (物理坐标: {focus_x}, {focus_y})...")
+            print(f"[SKILL] 姝ｅ湪鎵ц搴曞眰瀵圭劍鐐瑰嚮 {i+1}/3 (鐗╃悊鍧愭爣: {focus_x}, {focus_y})...")
             win32api.SetCursorPos((int(focus_x), int(focus_y)))
             win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
             time.sleep(0.05)
@@ -1011,32 +811,32 @@ class MSISkills:
         main_key_name = 'PageDown' if is_end else 'PageUp'
         burst_count = 15 if is_end else 12 
             
-        print(f"[SKILL] 激活完成，立即通过 Win32 注入 {main_key_name} x{burst_count} 物理连发...")
+        print(f"[SKILL] 婵€娲诲畬鎴愶紝绔嬪嵆閫氳繃 Win32 娉ㄥ叆 {main_key_name} x{burst_count} 鐗╃悊杩炲彂...")
         for i in range(burst_count):
-            # 模拟按下和抬起 (增加按下时长，确保远程环境捕获)
+            # 妯℃嫙鎸変笅鍜屾姮璧?(澧炲姞鎸変笅鏃堕暱锛岀‘淇濊繙绋嬬幆澧冩崟鑾?
             win32api.keybd_event(vk_code, 0, 0, 0)
-            time.sleep(0.03) # 增加按住时间 (Hold time)
+            time.sleep(0.03) # 澧炲姞鎸変綇鏃堕棿 (Hold time)
             win32api.keybd_event(vk_code, 0, win32con.KEYEVENTF_KEYUP, 0)
-            if i % 5 == 0: print(f"[SKILL] 滚动进度: {i}/{burst_count}...")
-            time.sleep(0.08) # 增加间隔时间 (Inter-key delay)
+            if i % 5 == 0: print(f"[SKILL] 婊氬姩杩涘害: {i}/{burst_count}...")
+            time.sleep(0.08) # 澧炲姞闂撮殧鏃堕棿 (Inter-key delay)
             
-        # 滚轮长效补丁
-        print(f"[SKILL] 正在注入硬件级滚轮补丁...")
+        # 婊氳疆闀挎晥琛ヤ竵
+        print(f"[SKILL] 姝ｅ湪娉ㄥ叆纭欢绾ф粴杞ˉ涓?..")
         for _ in range(12):
             amount = -1200 if is_end else 1200
             win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, amount, 0)
             time.sleep(0.06)
             
-        print(f"[SKILL] 内容区全链路暴力滚动已完成")
+        print(f"[SKILL] 鍐呭鍖哄叏閾捐矾鏆村姏婊氬姩宸插畬鎴?)
         time.sleep(0.8) 
         return True
 
     def action_close_tab(self):
-        """原子积木：关闭当前浏览器标签页 (Ctrl+W)"""
+        """鍘熷瓙绉湪锛氬叧闂綋鍓嶆祻瑙堝櫒鏍囩椤?(Ctrl+W)"""
         import pydirectinput
         self.agent.activate_window(self.agent.profile_name)
         time.sleep(0.3)
-        print("[SKILL] 正在关闭当前标签页 (Ctrl+W)...")
+        print("[SKILL] 姝ｅ湪鍏抽棴褰撳墠鏍囩椤?(Ctrl+W)...")
         pydirectinput.keyDown('ctrl')
         pydirectinput.press('w')
         pydirectinput.keyUp('ctrl')
@@ -1045,9 +845,8 @@ class MSISkills:
 
     def action_click_raw(self, rel_x, rel_y):
         """
-        原子积木：相对物理点击 (录制器回退方案)
-        基于对位基准的偏移点击，确保窗口移动后依然有效。
-        """
+        鍘熷瓙绉湪锛氱浉瀵圭墿鐞嗙偣鍑?(褰曞埗鍣ㄥ洖閫€鏂规)
+        鍩轰簬瀵逛綅鍩哄噯鐨勫亸绉荤偣鍑伙紝纭繚绐楀彛绉诲姩鍚庝緷鐒舵湁鏁堛€?        """
         import win32api, win32con, win32gui
         config = self._load_config()
         if not config: return False
@@ -1055,10 +854,9 @@ class MSISkills:
         base_x, base_y = config['dock_rect']['x'], config['dock_rect']['y']
         abs_x, abs_y = base_x + rel_x, base_y + rel_y
         
-        print(f"[SKILL] 执行物理点击: ({abs_x}, {abs_y}) [Rel: {rel_x}, {rel_y}]")
+        print(f"[SKILL] 鎵ц鐗╃悊鐐瑰嚮: ({abs_x}, {abs_y}) [Rel: {rel_x}, {rel_y}]")
         
-        # 强制激活窗口确保点击有效
-        hwnd = win32gui.FindWindow(None, self.agent.profile_name)
+        # 寮哄埗婵€娲荤獥鍙ｇ‘淇濈偣鍑绘湁鏁?        hwnd = win32gui.FindWindow(None, self.agent.profile_name)
         if hwnd:
             try:
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
@@ -1076,43 +874,8 @@ class MSISkills:
         time.sleep(0.5)
         return True
 
-    def action_scan_click(self, rel_x, start_rel_y, end_rel_y, step=15):
-        """
-        原子积木：纵向扫描连点 (针对坐标微偏的顽固按钮)
-        在指定的 X 坐标上，从 start_y 到 end_y 步进点击。
-        """
-        import win32api, win32con
-        config = self._load_config()
-        if not config: return False
-        
-        base_x, base_y = config['dock_rect']['x'], config['dock_rect']['y']
-        abs_x = base_x + rel_x
-        
-        print(f"[SKILL] 启动纵向扫描点击: X={abs_x}, Y={start_rel_y} -> {end_rel_y}")
-        
-        # 激活窗口
-        self.agent.activate_window(self.agent.profile_name)
-        time.sleep(0.3)
-        
-        curr_y = start_rel_y
-        while curr_y <= end_rel_y:
-            abs_y = base_y + curr_y
-            win32api.SetCursorPos((int(abs_x), int(abs_y)))
-            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-            time.sleep(0.05)
-            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-            print(f"  [SCAN] Clicked at Y={curr_y}")
-            time.sleep(0.1)
-            curr_y += step
-            
-        return True
-
     def action_sleep(self, seconds=3.0):
-        """
-        原子积木：支持固定或随机延时等待 (V28.5 拟人化版)
-        在等待期间会随机模拟人类微动鼠标，增加防检测能力。
-        """
-        import random, time, win32api
+        """鍘熷瓙绉湪锛氭敮鎸佸浐瀹氭垨闅忔満寤舵椂绛夊緟 (V27.5)"""
         final_seconds = seconds
         if isinstance(seconds, str) and "-" in seconds:
             try:
@@ -1124,74 +887,6 @@ class MSISkills:
                 final_seconds = random.uniform(float(seconds[0]), float(seconds[1]))
             except: pass
             
-        print(f"[SKILL] 延时等待 {final_seconds:.2f} 秒 (拟人微动已开启)...")
-        
-        # 拟人化等待：如果延时较长，则在中间穿插鼠标微动
-        start_time = time.time()
-        while time.time() - start_time < final_seconds:
-            remaining = final_seconds - (time.time() - start_time)
-            if remaining > 2.0 and random.random() < 0.3: # 30% 概率执行一次幽灵微动
-                # 随机选择一个附近的点进行平滑移动
-                curr_x, curr_y = win32api.GetCursorPos()
-                target_x = curr_x + random.randint(-50, 50)
-                target_y = curr_y + random.randint(-50, 50)
-                # 确保不移出主屏幕 (简单检查)
-                target_x = max(0, min(target_x, 1920))
-                target_y = max(0, min(target_y, 1080))
-                
-                self._human_mouse_move(target_x, target_y, duration=random.uniform(0.5, 1.5))
-            
-            time.sleep(min(remaining, 1.0))
-            
+        print(f"[SKILL] 寤舵椂绛夊緟 {final_seconds:.2f} 绉?..")
+        time.sleep(final_seconds)
         return True
-
-    def action_casual_behavior(self, intensity=1.0):
-        """
-        原子积木：拟人化随机动作 (V28.6 增强版)
-        模拟人类在阅读或思考时的微小动作：随机小幅滚动、随机鼠标位移。
-        :param intensity: 动作强度系数
-        """
-        print(f"[SKILL] 正在执行拟人化随机观察动作 (强度: {intensity})...")
-        import random, time, win32api, win32con
-        
-        # 1. 随机微量滚动 (模拟反复确认内容)
-        scroll_count = random.randint(1, int(3 * intensity))
-        for _ in range(scroll_count):
-            # 随机滚动位移：-150 到 150 之间
-            amount = random.randint(-150, 150)
-            win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, amount, 0)
-            time.sleep(random.uniform(0.2, 0.5))
-        
-        # 2. 随机鼠标晃动 (在任务区域内随机游走)
-        config = self._load_config()
-        if config and "dock_rect" in config:
-            rect = config["dock_rect"]
-            for _ in range(random.randint(1, int(2 * intensity))):
-                tx = rect["x"] + random.randint(100, rect["width"] - 100)
-                ty = rect["y"] + random.randint(100, rect["height"] - 100)
-                self._human_mouse_move(tx, ty, duration=random.uniform(0.6, 1.5))
-                time.sleep(random.uniform(0.2, 0.6))
-        
-        return True
-
-    def _human_mouse_move(self, target_x, target_y, duration=1.0):
-        """
-        [V28 内部工具] 模拟人类非线性、带抖动的鼠标移动轨迹。
-        """
-        try:
-            import math, win32api, time, random
-            start_x, start_y = win32api.GetCursorPos()
-            steps = int(duration * 20) # 20Hz 刷新率
-            if steps < 1: steps = 1
-            
-            for i in range(1, steps + 1):
-                t = i / steps
-                t_eased = t * t * (3 - 2 * t) # Ease-in-out
-                new_x = start_x + (target_x - start_x) * t_eased
-                new_y = start_y + (target_y - start_y) * t_eased
-                noise_x = math.sin(t * math.pi * 2) * random.uniform(0, 2)
-                noise_y = math.cos(t * math.pi * 2) * random.uniform(0, 2)
-                win32api.SetCursorPos((int(new_x + noise_x), int(new_y + noise_y)))
-                time.sleep(duration / steps)
-        except Exception as e:
-            print(f"[INTERNAL] 鼠标微动异常: {e}")

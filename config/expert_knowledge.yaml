@@ -1,0 +1,22 @@
+profiles:
+  portrait_v4k:
+    name: "4K 高清人像专家"
+    detect_keywords: ["portrait", "human", "face", "girl", "boy"]
+    criteria:
+      - "检查皮肤纹理：Response A/B 是否保留了自然的毛孔感，还是过于平滑（磨皮感）。"
+      - "光影对比：观察人物面部的光影是否自然，是否有明显的 AI 伪影或光影不匹配。"
+      - "背景虚化：虚化是否自然，边缘抠图是否准确（尤其是头发丝）。"
+      - "画质细节：在 4K 详情下，眼睛和睫毛的清晰度对比。"
+    rules:
+      "Visual Quality": "如果其中一个响应有明显的肢体畸变或手指错误，必须直接给另一个响应高分。"
+      "ID Preservation": "对比 Inputs 原始图，哪个响应更接近原图的五官特征。"
+      "Less AI Generated": "优先选择看起来更像真实摄影作品而非‘油画感’或‘塑料感’的图像。"
+
+  landscape_v4k:
+    name: "自然风景专家"
+    detect_keywords: ["mountain", "lake", "forest", "nature"]
+    criteria:
+      - "纹理丰富度：树叶、岩石的细节表现力。"
+      - "动态范围：高光（天空）和暗部（阴影）的层次感。"
+    rules:
+      "Visual Quality": "画面构图是否符合三分法，色彩是否过于饱和。"
