@@ -1550,7 +1550,13 @@
       }
     ],
     "Tina 评分任务": {
-      "id": "tina_marking_v4",
+      "id": "tina_ai_flow",
+      "name": "Tina AI 自动评分",
+      "panel": "config/panels/ai_flow.json",
+      "description": "执行大模型驱动的自动点击流程"
+    },
+    {
+      "id": "tina_scoring_phase1",
       "steps": [
         {
           "name": "0. 检查并清理弹窗广告",

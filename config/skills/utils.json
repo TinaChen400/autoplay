@@ -1,0 +1,77 @@
+{
+  "lock_window_position": {
+    "description": "锁定并对齐窗口位置",
+    "params": {
+      "window_title": "Tina",
+      "x": 10,
+      "y": 10,
+      "width": 1440,
+      "height": 900
+    }
+  },
+  "scroll_up": {
+    "description": "滚轮向上滚动",
+    "params": {
+      "times": 5
+    }
+  },
+  "scroll_down": {
+    "description": "滚轮向下滚动",
+    "params": {
+      "times": 5
+    }
+  },
+  "ai_clear": {
+    "description": "清空 AI 队列",
+    "skill": "ai_clear"
+  },
+  "ai_snap": {
+    "description": "抓取 AI 快照",
+    "skill": "ai_snap"
+  },
+  "ai_analyze": {
+    "description": "投喂并分析",
+    "params": {
+      "prompt": ""
+    }
+  },
+  "click_image_corner": {
+    "description": "点击图片容器角落",
+    "category": "vision",
+    "params": {
+      "keywords": [],
+      "corner": "top-right",
+      "margin": 25
+    }
+  },
+  "click_grid_cell": {
+    "description": "行列网格点击",
+    "category": "vision",
+    "params": {
+      "row_keywords": [],
+      "col_keywords": []
+    }
+  },
+  "apply_scoring_results": {
+    "description": "应用全维度评分决策",
+    "category": "workflow",
+    "params": {
+      "decisions": {}
+    }
+  },
+  "wait_for_text": {
+    "description": "等待文字出现",
+    "category": "vision",
+    "params": {
+      "text": "",
+      "timeout": 10
+    }
+  },
+  "human_idle_move": {
+    "description": "模拟人类拟人化随机滑动鼠标",
+    "params": {
+      "duration": 2.0,
+      "steps": 20
+    }
+  }
+}
