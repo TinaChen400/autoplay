@@ -9,7 +9,6 @@ class VisionCapture:
     支持 OCR 懒加载，节省启动开销。
     """
     def __init__(self):
-        self.sct = mss.mss()
         self.last_frame = None
         self._ocr = None # 懒加载标记
 
@@ -28,6 +27,7 @@ class VisionCapture:
         import os
         import time
         from PIL import Image
+        import mss
         
         temp_dir = r"D:\Dev\autoplay\temp"
         os.makedirs(temp_dir, exist_ok=True)
@@ -36,15 +36,39 @@ class VisionCapture:
         img_path = os.path.join(temp_dir, img_filename)
         
         # 截取逻辑
-        if region:
-            # 针对高分屏优化的区域截取
-            sct_img = self.sct.grab(region)
-        else:
-            sct_img = self.sct.grab(self.sct.monitors[1])
-            
-        img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-        img.save(img_path, quality=85)
+        with mss.mss() as sct:
+            if region:
+                # 针对高分屏优化的区域截取
+                sct_img = sct.grab(region)
+            else:
+                # 默认获取主显示器
+                sct_img = sct.grab(sct.monitors[1])
+                
+            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+            img.save(img_path, quality=85)
         return img_path
+
+    def compare_images(self, path1: str, path2: str) -> float:
+        """
+        比较两张图片的差异度。返回差异百分比 (0.0 - 100.0)。
+        """
+        img1 = cv2.imread(path1)
+        img2 = cv2.imread(path2)
+        
+        if img1 is None or img2 is None:
+            return 100.0
+            
+        if img1.shape != img2.shape:
+            # 尺寸不一致，强制缩放对齐
+            img2 = cv2.resize(img2, (img1.shape[1], img1.shape[0]))
+            
+        # 计算绝对差值
+        diff = cv2.absdiff(img1, img2)
+        non_zero_count = np.count_nonzero(diff)
+        total_pixels = img1.size
+        
+        diff_percent = (non_zero_count / total_pixels) * 100
+        return diff_percent
 
 # 补充缺失导入
 from PIL import Image

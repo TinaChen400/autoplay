@@ -23,9 +23,9 @@ class TaskBridge:
     V14 积木化任务驱动引擎：动态解析 JSON 蓝图并调度原子技能。
     """
     def __init__(self):
-        self.skills = MSISkills(bridge=self)
         self.config_path = r"D:/Dev/autoplay/config/missions.json"
         self.debug_log = r"D:/Dev/autoplay/records/hud_debug.log"
+        self.skills = MSISkills(bridge=self)
         self.steps: List[TaskStep] = []
         self.is_recording = False
         self.on_step_added_cb = None # UI 刷新回调
