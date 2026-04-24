@@ -6,64 +6,91 @@ import time
 from typing import Callable, List, Dict
 
 sys.path.append(r"D:/Dev/autoplay")
-from src.tasks.msi_skills import MSISkills
-from src.execution.recorder import MissionRecorder
+from src.skills.msi_skills import MSISkills
+from src.core.recorder import MissionRecorder
 
 class TaskStep:
-    def __init__(self, name: str, methodName: str, params: dict, description: str):
+    def __init__(self, id: int, name: str, methodName: str, params: dict, description: str):
+        self.id = id
         self.name = name
         self.methodName = methodName
         self.params = params
         self.description = description
-        self.status = "idle" # idle, running, success, failed
-        self.result_data = "" # 用于存放过程结果（如 AI 决策词）
-
+        self.status = "idle"
 class TaskBridge:
     """
     V14 积木化任务驱动引擎：动态解析 JSON 蓝图并调度原子技能。
     """
     def __init__(self):
-        self.config_path = r"D:/Dev/autoplay/config/missions.json"
-        self.debug_log = r"D:/Dev/autoplay/records/hud_debug.log"
+        # [V6.99] 使用相对路径确保环境兼容性
+        self.root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        self.config_path = os.path.join(self.root, "config", "missions.json")
+        self.debug_log = os.path.join(self.root, "records", "hud_debug.log")
+        
         self.skills = MSISkills(bridge=self)
         self.steps: List[TaskStep] = []
         self.is_recording = False
-        self.on_step_added_cb = None # UI 刷新回调
-        self.on_visual_feedback_cb = None # 视觉框反馈回调 (V11)
-        self._log("TaskBridge 引擎初始化完毕。")
+        self.on_step_added_cb = None 
+        self.on_visual_feedback_cb = None 
+        self._log("TaskBridge 引擎 (V14 Standard) 初始化完毕。")
         self.load_mission()
-        self.recorder = MissionRecorder(self, self.skills.hw, self.skills)
 
     def _log(self, msg):
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        with open(self.debug_log, "a", encoding="utf-8") as f:
-            f.write(f"[{timestamp}] {msg}\n")
-        print(msg)
+        """统一日志记录：支持时间戳与文件持久化"""
+        try:
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+            log_line = f"[{timestamp}] {msg}"
+            # 写入调试文件
+            if hasattr(self, 'debug_log'):
+                with open(self.debug_log, "a", encoding="utf-8") as f:
+                    f.write(log_line + "\n")
+            print(log_line)
+        except Exception as e:
+            print(f"[BRIDGE_LOG_ERR] {str(e)}")
 
-    @property
-    def all_mission_names(self) -> List[str]:
-        return list(self.full_config.get("missions", {}).keys())
-
-    def load_mission(self, mission_name: str = None):
-        """从 JSON 加载积木流"""
-        if not os.path.exists(self.config_path): return
-        with open(self.config_path, "r", encoding="utf-8") as f:
-            self.full_config = json.load(f)
+    def load_mission(self, custom_path: str = None, mission_name: str = None):
+        """从 JSON 加载积木流 (兼容直接步骤与任务集两种模式)"""
+        target_path = custom_path if custom_path else self.config_path
+        if not os.path.exists(target_path): 
+            self._log(f"[BRIDGE] 错误: 找不到任务文件 {target_path}")
+            return
             
-        self.current_mission_name = mission_name or self.full_config.get("current_mission", "图片打分任务")
-        mission_data = self.full_config.get("missions", {}).get(self.current_mission_name, [])
-        
-        # 兼容性补丁：检查是直接的步骤列表，还是包含元数据的对象
-        if isinstance(mission_data, dict):
-            raw_steps = mission_data.get("steps", [])
+        with open(target_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            
+        # [V7.02] 智能识别模式
+        if isinstance(data, list):
+            # 模式 A: 纯步骤列表
+            raw_steps = data
+            self.current_mission_name = os.path.basename(target_path)
+        elif isinstance(data, dict) and "steps" in data:
+            # 模式 B: 单个任务对象 (ai_flow.json 风格)
+            raw_steps = data["steps"]
+            self.current_mission_name = data.get("name", os.path.basename(target_path))
+        elif isinstance(data, dict) and "missions" in data:
+            # 模式 C: 任务集合 (missions.json 风格)
+            self.full_config = data
+            self.current_mission_name = mission_name or data.get("current_mission", "图片打分任务")
+            mission_data = data.get("missions", {}).get(self.current_mission_name, [])
+            raw_steps = mission_data.get("steps", []) if isinstance(mission_data, dict) else mission_data
         else:
-            raw_steps = mission_data
+            self._log(f"[BRIDGE] 错误: JSON 结构无法识别 {target_path}")
+            return
             
-        self.steps = [
-            TaskStep(s["name"], s["action"], s.get("params", {}), s.get("description", ""))
-            for s in raw_steps
-        ]
-        print(f"[BRIDGE] 加载任务: {self.current_mission_name} ({len(self.steps)} 步)")
+        self.steps = []
+        for i, s in enumerate(raw_steps):
+            if not s.get("name"): continue
+            step_id = s.get("id", i + 1)
+            step = TaskStep(
+                id=step_id,
+                name=s["name"],
+                methodName=s.get("action") or s.get("skill"),
+                params=s.get("params", {}),
+                description=s.get("description", "")
+            )
+            self.steps.append(step)
+            
+        self._log(f"[BRIDGE] 加载成功: {self.current_mission_name} ({len(self.steps)} 步)")
 
     def save_mission(self):
         """将当前内存中的积木流持久化回 JSON (结构化升级版)"""
@@ -121,44 +148,54 @@ class TaskBridge:
         return t
 
     def run_mission(self, callback: Callable = None):
-        """全自动驾驶：按顺序跑完所有积木"""
-        print("[MISSION] 准备启动全自动指挥流程...")
+        """全自动驾驶：按顺序跑完所有积木 (V7.05 增强反馈版)"""
+        self._log("[MISSION] >>> 准备启动全自动指挥流程...")
         self.reset()
+        
         def _chain_executor():
-            print("[MISSION] _chain_executor 后台线程已激活！")
+            self._log("[MISSION] 后台执行引擎已就绪。")
             for i in range(len(self.steps)):
+                if getattr(self, '_stop_requested', False):
+                    self._log("[MISSION] 接收到终止信号，流程中断。")
+                    break
+                    
                 step = self.steps[i]
-                print(f"[MISSION] 正在自动执行第 {i+1} 步: {step.name}")
+                step_info = f"第 {i+1}/{len(self.steps)} 步: {step.name}"
+                self._log(f"[MISSION] 正在执行: {step_info}")
                 
-                # 阻塞式执行（在工作线程中）
                 try:
                     step.status = "running"
                     if callback: callback()
                     
-                    print(f"[MISSION] 正在反射调用积木函数: {step.methodName}...")
+                    # [V7.05] 反射调用
+                    if not hasattr(self.skills, step.methodName):
+                        self._log(f"[MISSION] 错误: 找不到技能函数 {step.methodName}")
+                        step.status = "failed"
+                        if callback: callback()
+                        break
+                        
                     method = getattr(self.skills, step.methodName)
+                    # 尝试调用并捕获结果
                     result = method(**step.params)
-                    print(f"[MISSION] 积木函数 {step.methodName} 返回结果: {result}")
                     
                     if result is False:
+                        self._log(f"[MISSION] 步骤执行返回失败。流程中断。")
                         step.status = "failed"
-                        print(f"[MISSION] 任务在第 {i+1} 步中断，原因：执行失败")
                         if callback: callback()
-                        # 强制最后刷新一次，确保按钮恢复
-                        self.reset_from_fail = True
                         break
                     
                     step.status = "success"
+                    self._log(f"[MISSION] 完成: {step.name}")
                     if callback: callback()
-                    time.sleep(1.0) # 步骤间停顿，给系统喘息时间
+                    time.sleep(1.2) # 步骤间自然停顿
                 except Exception as e:
+                    import traceback
+                    self._log(f"[MISSION] 崩溃详情: {traceback.format_exc()}")
                     step.status = "failed"
-                    print(f"[MISSION] 异常中断: {e}")
                     if callback: callback()
                     break
-            print("[MISSION] 全自动任务流程运行结束")
+            self._log("[MISSION] <<< 全自动任务流程执行完毕。")
 
-        import time
         threading.Thread(target=_chain_executor, daemon=True).start()
 
     def delete_step(self, index: int):

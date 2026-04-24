@@ -91,7 +91,7 @@ class ViewportManager:
     def set_dock_from_hardware(self) -> None:
         """Pulls dock rect from HardwareManager's active calibration."""
         try:
-            from src.utils.hardware_manager import HardwareManager
+            from src.drivers.hardware import HardwareManager
             hw = HardwareManager()
             calib = hw.get_active_calibration()
             if calib and 'dock_rect' in calib:

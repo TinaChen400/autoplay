@@ -9,7 +9,7 @@ import win32api
 import win32con
 import win32gui
 from src.skills.registry import skill_handler
-from src.utils.viewport_manager import ViewportManager
+from src.core.viewport import ViewportManager
 
 logger = logging.getLogger("AtomicSkills")
 
@@ -18,10 +18,20 @@ def get_agent():
     class MockAgent:
         def __init__(self):
             self.records_dir = r"D:\Dev\autoplay\records"
-            from src.utils.ocr_reader import OCRReader
-            from src.utils.vision import VisionCapture
+            from src.vision.ocr_reader import OCRReader
+            from src.vision.capture import VisionCapture
             self.vc = VisionCapture()
     return MockAgent()
+
+# [V7.40] 共享 Oracle 实例，确保图片队列在步骤间持久化
+_shared_oracle = None
+
+def get_oracle():
+    global _shared_oracle
+    if _shared_oracle is None:
+        from src.ai.oracle import GPTOracle
+        _shared_oracle = GPTOracle()
+    return _shared_oracle
 
 @skill_handler("click_grid_cell")
 def click_grid_cell(vm: ViewportManager, row_keywords: list, col_keywords: list, **kwargs) -> bool:
@@ -122,7 +132,7 @@ def apply_scoring_results(vm: ViewportManager, decisions: dict, **kwargs) -> boo
 
 @skill_handler("lock_window_position")
 def lock_window_position(vm: ViewportManager, x: int = 10, y: int = 10, width: int = 1440, height: int = 900, **kwargs) -> bool:
-    from src.utils.window_lock import WindowLock
+    from src.drivers.window import WindowLock
     locker = WindowLock("Tina")
     success = locker.lock_and_align(x, y, width, height)
     if success: vm.update_dock_rect({"x": x, "y": y, "width": width, "height": height})
@@ -130,20 +140,21 @@ def lock_window_position(vm: ViewportManager, x: int = 10, y: int = 10, width: i
 
 @skill_handler("ai_clear")
 def ai_clear_skill(vm: ViewportManager, **kwargs) -> bool:
-    from src.execution.gpt_oracle import GPTOracle
-    return GPTOracle().action_clear_queue()
+    return get_oracle().action_clear_queue()
 
 @skill_handler("ai_snap")
 def ai_snap_skill(vm: ViewportManager, **kwargs) -> bool:
-    from src.execution.gpt_oracle import GPTOracle
     rect = vm.dock_rect
     if not rect: return False
-    return GPTOracle().action_add_to_queue(rect)
+    return get_oracle().action_add_to_queue(rect)
 
 @skill_handler("ai_analyze")
 def ai_analyze_skill(vm: ViewportManager, prompt: str = None, **kwargs) -> bool:
-    from src.execution.gpt_oracle import GPTOracle
-    return GPTOracle().action_send_queue_to_gpt(custom_prompt=prompt)
+    oracle = get_oracle()
+    # [V7.40] 投喂前必须先对焦浏览器，否则 Ctrl+V 会错发给 Tina 窗口
+    oracle.action_focus_gpt_window()
+    time.sleep(1.0)
+    return oracle.action_send_queue_to_gpt(custom_prompt=prompt)
 
 @skill_handler("scroll_up")
 def scroll_up_skill(vm: ViewportManager, times: int = 5, **kwargs) -> bool:
@@ -172,48 +183,77 @@ def scroll_down_skill(vm: ViewportManager, times: int = 5, **kwargs) -> bool:
 @skill_handler("human_idle_move")
 def human_idle_move(vm: ViewportManager, duration: float = 2.0, steps: int = 15, **kwargs) -> bool:
     """
-    模拟人类漫无目的地微微滑过界面（模拟阅读/等待）。
-    每次生成的轨迹都是唯一的。
+    [V7.65] 拟人化安全漫游：三重物理锁死，绝不越界
     """
     import random
-    import math
+    import time
+    import win32api
+    import win32gui
+    import win32con
     
-    rect = vm.dock_rect
-    if not rect: return False
+    # 0. 基础环境感知
+    screen_w = win32api.GetSystemMetrics(win32con.SM_CXSCREEN)
+    screen_h = win32api.GetSystemMetrics(win32con.SM_CYSCREEN)
     
-    # 获取当前鼠标位置
+    # [V7.80] 智能探测模式：放宽匹配 + 失败全量诊断
+    from src.drivers.window import WindowManager
+    import win32gui
+    
+    wm = WindowManager(keywords=["Tina", "流畅"])
+    rect_raw = wm.get_window_rect()
+    
+    if not rect_raw:
+        print("!!! [IDLE_MOVE] 警告：找不到 Tina 窗口，正在扫描全系统窗口标题以供诊断...")
+        def dump_titles(hwnd, _):
+            if win32gui.IsWindowVisible(hwnd):
+                t = win32gui.GetWindowText(hwnd)
+                if t: print(f"  - [DEBUG] 发现窗口: {t}")
+        win32gui.EnumWindows(dump_titles, None)
+        
+        # 兜底：执行屏幕中心漫游，不中断任务
+        rect = {"x": 500, "y": 300, "w": 800, "h": 600}
+        target_hwnd = None
+    else:
+        print(f">>> [IDLE_MOVE] 锁定成功！[{rect_raw.get('title')}]")
+        rect = {"x": rect_raw["left"], "y": rect_raw["top"], 
+                "w": rect_raw["width"], "h": rect_raw["height"]}
+        target_hwnd = wm.hwnd
+        
+    # [V7.71] 修正激活逻辑：直接调用 Win32 原生句柄
+    if target_hwnd:
+        try:
+            # 如果窗口最小化了，先恢复它
+            if win32gui.IsIconic(target_hwnd):
+                win32gui.ShowWindow(target_hwnd, win32con.SW_RESTORE)
+            win32gui.SetForegroundWindow(target_hwnd)
+            time.sleep(0.2)
+        except Exception as e:
+            print(f"!!! [IDLE_MOVE] 激活窗口失败: {e}")
+    
+    print(f">>> [IDLE_MOVE] 已锁定目标漫游区: {rect}")
+    
+    # 2. 漫游目标：窗口左侧 20% - 60% 区域 (避开右侧滚动条)
+    target_x = rect["x"] + int(rect["w"] * 0.2) + random.randint(0, int(rect["w"] * 0.4))
+    target_y = rect["y"] + int(rect["h"] * 0.3) + random.randint(0, int(rect["h"] * 0.4))
+    
+    # 3. 初始归位 (先回到安全区)
+    win32api.SetCursorPos((target_x, target_y))
+    time.sleep(0.1)
+    
     curr_x, curr_y = win32api.GetCursorPos()
     
-    # 确定移动范围（在窗口内随机找几个点）
-    target_x = rect["x"] + random.randint(200, rect["width"] - 200)
-    target_y = rect["y"] + random.randint(200, rect["height"] - 200)
-    
-    logger.info(f"Simulating human move from ({curr_x},{curr_y}) to ({target_x},{target_y})")
-    
-    # 模拟非线性轨迹（简单的插值+随机抖动）
+    # 4. 漫游轨迹 (双重物理锁死)
     for i in range(steps):
-        # 计算插值比例
         t = (i + 1) / steps
-        # 加入正弦波动模拟手抖
-        jitter = math.sin(t * math.pi) * 10
+        step_x = int(curr_x + (target_x - curr_x) * t)
+        step_y = int(curr_y + (target_y - curr_y) * t)
         
-        step_x = int(curr_x + (target_x - curr_x) * t + random.randint(-5, 5))
-        step_y = int(curr_y + (target_y - curr_y) * t + jitter)
+        # 钳制在窗口内，留出 150 像素安全边距
+        final_x = max(rect["x"] + 150, min(step_x, rect["x"] + rect["w"] - 150))
+        final_y = max(rect["y"] + 150, min(step_y, rect["y"] + rect["h"] - 150))
         
-        win32api.SetCursorPos((step_x, step_y))
-        
-        # 1. 基础节奏（慢-快-慢）
-        base_sleep = (duration / steps) * (1.5 - math.sin(t * math.pi))
-        
-        # 2. 引入“混沌系数”：每一步都有随机的速度波动 (0.5倍 到 2.0倍 波动)
-        chaos_factor = random.uniform(0.5, 2.0)
-        final_sleep = base_sleep * chaos_factor
-        
-        # 3. 随机“发呆”：模拟人在某个细节处停顿
-        if random.random() < 0.1: # 10% 概率停顿
-            time.sleep(random.uniform(0.1, 0.4))
-            
-        time.sleep(max(0.005, final_sleep))
+        win32api.SetCursorPos((final_x, final_y))
+        time.sleep(duration / steps)
         
     return True
 

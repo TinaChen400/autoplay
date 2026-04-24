@@ -7,17 +7,19 @@ from PyQt6.QtGui import QColor, QFont
 class TaskPanel(QWidget):
     """左侧任务管理面板"""
     task_selected = pyqtSignal(str) # 任务点击信号
+    stop_signal = pyqtSignal()      # 停止信号 (V6.7)
     
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFixedWidth(300)
         self.setMaximumHeight(800) # 限制高度，防止在竖屏下拉得太细长
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setStyleSheet("""
             QWidget {
-                background-color: rgba(25, 25, 25, 200); 
-                color: #eee; 
-                border: 2px solid rgba(0, 255, 187, 80);
-                border-radius: 15px;
+                background-color: rgba(15, 15, 20, 240); 
+                color: #e0e0e0; 
+                border: 1px solid rgba(255, 255, 255, 30);
+                border-radius: 12px;
             }
             QLabel { border: none; background: transparent; }
         """)
@@ -30,21 +32,26 @@ class TaskPanel(QWidget):
         
         self.task_list = QListWidget()
         self.task_list.setStyleSheet("""
-            QListWidget { background: transparent; border: none; font-size: 15px; outline: none; }
+            QListWidget { background: transparent; border: none; font-size: 15px; outline: none; color: #fff; }
             QListWidget::item { 
-                background: rgba(255, 255, 255, 10); 
+                background: rgba(255, 255, 255, 30); 
                 border-radius: 8px; 
                 margin-bottom: 5px; 
                 padding: 10px;
+                color: #fff;
             }
-            QListWidget::item:hover { background: rgba(0, 255, 187, 30); }
-            QListWidget::item:selected { background: rgba(0, 255, 187, 60); border: 1px solid #0fb; }
+            QListWidget::item:hover { background: rgba(255, 255, 255, 20); color: #fff; }
+            QListWidget::item:selected { background: rgba(255, 255, 255, 40); color: #fff; border: 1px solid rgba(255, 255, 255, 60); }
         """)
         self.task_list.itemClicked.connect(self._on_item_clicked)
         layout.setContentsMargins(15, 15, 15, 15)
         layout.addWidget(self.task_list)
         
         tasks = [
+            {"name": "【核心】窗口物理锁定与吸附对齐", "desc": "强制固定远程窗口位置并移除边框"},
+            {"name": "【高级】AI 全自动双图研判", "desc": "按 ai_flow.json 步骤执行全流程打分"},
+            {"name": "【诊断】视觉引擎精度比武", "desc": "对比 OCR 与 布局分析 引擎的识别精度"},
+            {"name": "【高级】豆包视觉：图标深度识别", "desc": "调用 Seed-1.8 大模型识别图片中的小图标"},
             {"name": "测试：网页自动刷新", "desc": "识别刷新图标并模拟点击"},
             {"name": "任务：检测‘确定’按钮并点击", "desc": "寻找确定/OK按钮"},
             {"name": "任务：网页输入 123456", "desc": "在搜索框输入数字并回车"}
@@ -59,6 +66,7 @@ class TaskPanel(QWidget):
 
     def _on_item_clicked(self, item):
         text = item.text()
+        print(f"[UI_CLICK] 用户点击了任务项: {text}")
         if "网页输入" in text:
             content = text.split("网页输入 ")[-1]
             print(f"解析到 INPUT 指令: {content}")
@@ -70,12 +78,13 @@ class LogPanel(QWidget):
         super().__init__(parent)
         self.setFixedWidth(350)
         self.setMaximumHeight(800)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setStyleSheet("""
             QWidget {
-                background-color: rgba(25, 25, 25, 200); 
-                color: #eee; 
-                border: 2px solid rgba(0, 255, 187, 80);
-                border-radius: 15px;
+                background-color: rgba(15, 15, 20, 240); 
+                color: #e0e0e0; 
+                border: 1px solid rgba(255, 255, 255, 30);
+                border-radius: 12px;
             }
             QLabel { border: none; background: transparent; }
         """)
@@ -84,16 +93,16 @@ class LogPanel(QWidget):
         
         # 资源条
         self.status_label = QLabel("状态: 空闲 (Local-AI)")
-        self.status_label.setStyleSheet("color: #0fb;")
+        self.status_label.setStyleSheet("color: #aaa;")
         layout.addWidget(self.status_label)
         
         self.log_output = QTextEdit()
         self.log_output.setReadOnly(True)
         self.log_output.setStyleSheet("""
-            background-color: rgba(0, 0, 0, 100); 
+            background-color: rgba(0, 0, 0, 220); 
             font-family: 'Consolas', 'Courier New'; 
             color: #adff2f; 
-            border: 1px solid #333;
+            border: 1px solid #00ffbb;
             border-radius: 5px;
             padding: 5px;
         """)
@@ -111,6 +120,53 @@ class LogPanel(QWidget):
         if category == "ERROR": color = "#f44"
         
         self.log_output.append(f"<span style='color:{color}'>[{category}] {msg}</span>")
+
+        # 保持滚动到底部
+        self.log_output.verticalScrollBar().setValue(self.log_output.verticalScrollBar().maximum())
+
+class ControlBar(QWidget):
+    """新增：底部控制条"""
+    stop_clicked = pyqtSignal()
+    quit_clicked = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedHeight(50)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(5, 5, 5, 5)
+
+        self.btn_stop = QPushButton("紧急停止 (STOP)")
+        self.btn_stop.setStyleSheet("""
+            QPushButton {
+                background-color: #9c2b2b; 
+                color: white; 
+                font-weight: bold; 
+                border-radius: 8px;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #c43535;
+            }
+        """)
+        self.btn_stop.clicked.connect(self.stop_clicked.emit)
+
+        self.btn_quit = QPushButton("退出 (QUIT)")
+        self.btn_quit.setStyleSheet("""
+            QPushButton {
+                background-color: #2a2a2e; 
+                color: #888; 
+                border-radius: 8px;
+                border: 1px solid #3a3a3e;
+            }
+            QPushButton:hover {
+                background-color: #3a3a3e;
+                color: #ccc;
+            }
+        """)
+        self.btn_quit.clicked.connect(self.quit_clicked.emit)
+
+        layout.addWidget(self.btn_stop, 2)
+        layout.addWidget(self.btn_quit, 1)
 
 class ApprovalDialog(QFrame):
     """工作流审批弹窗"""

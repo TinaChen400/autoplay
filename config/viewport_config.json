@@ -1,11 +1,8 @@
 {
-    "calibration": {
-        "dock_rect": {
-            "x": 10,
-            "y": 10,
-            "width": 1440,
-            "height": 900
-        },
-        "scale_factor": 0.75
-    }
+    "base_resolution": [1440, 900],
+    "user_scale": 1.25,
+    "snap_position": [10, 10],
+    "window_keyword": "Tina",
+    "force_lock": true,
+    "aggressive_mode": true
 }

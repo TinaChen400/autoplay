@@ -15,7 +15,7 @@ class VisionCapture:
     def get_ocr(self):
         """仅在真正需要 AI 分析时才加载沉重的 OCR 引擎"""
         if self._ocr is None:
-            from src.utils.ocr_reader import OCRReader
+            from src.vision.ocr_reader import OCRReader
             self._ocr = OCRReader()
         return self._ocr
 
@@ -47,6 +47,21 @@ class VisionCapture:
             img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
             img.save(img_path, quality=85)
         return img_path
+
+    def capture_region_np(self, region: Dict[str, int]) -> Optional[np.ndarray]:
+        """
+        截取特定区域并返回 OpenCV 格式的 numpy 数组 (BGR)。
+        region: {'top': y, 'left': x, 'width': w, 'height': h}
+        """
+        with mss.mss() as sct:
+            try:
+                sct_img = sct.grab(region)
+                # 转换 bgra 为 bgr numpy array
+                img = np.array(sct_img)
+                return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+            except Exception as e:
+                print(f"Capture NP Error: {e}")
+                return None
 
     def compare_images(self, path1: str, path2: str) -> float:
         """

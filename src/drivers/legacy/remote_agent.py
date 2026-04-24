@@ -11,9 +11,9 @@ import random
 
 # Project paths
 sys.path.append(r"D:\Dev\autoplay")
-from src.utils.vision import VisionCapture
+from src.vision.capture import VisionCapture
 
-from src.execution.ahk_executor import AHKExecutor
+from src.drivers.ahk_executor import AHKExecutor
 
 class RemoteAgent:
     def __init__(self, profile_name="Tina"):

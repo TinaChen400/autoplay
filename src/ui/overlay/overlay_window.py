@@ -51,12 +51,15 @@ class OverlayWindow(QMainWindow):
         else:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
 
-    def update_geometry(self, rect: dict):
+    def update_geometry(self, rect: dict, fixed=False):
         """
         同步远程窗口坐标。
-        rect: {"left": x, "top": y, "width": w, "height": h}
+        如果 fixed 为 True，则锁定在屏幕左上角作为基准模具。
         """
-        self.setGeometry(rect['left'], rect['top'], rect['width'], rect['height'])
+        if fixed:
+            self.setGeometry(10, 10, 1440, 900)
+        else:
+            self.setGeometry(rect['left'], rect['top'], rect['width'], rect['height'])
 
     def update_ar_elements(self, elements: list):
         """更新需要绘制的 AR 元素列表"""
@@ -74,8 +77,18 @@ class OverlayWindow(QMainWindow):
         for elem in self.ar_elements:
             self._draw_element(painter, elem)
             
+        # [V6.6 恢复] 绘制全局边界框 (让用户看到对位情况)
+        self._draw_boundary(painter)
+            
         # 绘制全局状态信息
         self._draw_status(painter)
+
+    def _draw_boundary(self, painter):
+        """在窗口边缘绘制细绿色边框，标识 HUD 覆盖范围"""
+        painter.setPen(QPen(QColor(0, 255, 187, 180), 2)) # 亮绿色，半透明
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        # 稍微向内缩 1 像素，防止被系统裁剪
+        painter.drawRect(1, 1, self.width()-2, self.height()-2)
 
     def _draw_element(self, painter, elem):
         """绘制单个识别框或目标点"""

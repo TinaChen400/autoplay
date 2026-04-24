@@ -8,8 +8,8 @@ import cv2
 import numpy as np
 from typing import Callable, Optional
 import mss
-from src.utils.vision import VisionCapture
-from src.utils.layout_parser import LayoutParser
+from src.vision.capture import VisionCapture
+from src.vision.layout_parser import LayoutParser
 
 class MissionRecorder:
     """

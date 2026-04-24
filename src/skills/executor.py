@@ -8,7 +8,7 @@ from typing import Dict, List, Any, Optional
 from src.skills.loader import SkillLoader
 from src.skills.registry import registry
 from src.skills.humanize import random_delay, jitter_pos, simulate_think_time
-from src.utils.viewport_manager import ViewportManager
+from src.core.viewport import ViewportManager
 
 # Set up logging
 logger = logging.getLogger("SkillExecutor")

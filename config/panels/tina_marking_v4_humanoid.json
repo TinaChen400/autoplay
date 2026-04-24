@@ -1,97 +1,215 @@
 {
-  "mission_id": "tina_marking_v4_humanoid",
-  "mission_name": "Tina Scoring V4 (Humanoid Edition)",
-  "description": "Natural behavior simulation with variable speed and high-gain cruise.",
+  "name": "AI 全自动双图研判 (V4 Humanoid)",
+  "category": "ai",
   "steps": [
     {
       "id": 1,
       "name": "1. 初始重置 (Home)",
       "skill": "press_keys",
       "action": "press_keys",
-      "params": { "keys": ["home"], "interval": 1.0 }
+      "params": {
+        "keys": [
+          "home"
+        ],
+        "interval": 1.0
+      }
+    },
+    {
+      "id": 2,
+      "name": "2.强力上滚补位",
+      "skill": "human_scroll",
+      "action": "human_scroll",
+      "params": {
+        "distance": -500,
+        "steps": 3
+      }
     },
     {
       "id": 2,
       "name": "2.1 碎步下滚 (拟人)",
       "skill": "human_scroll",
       "action": "human_scroll",
-      "params": { "distance": 450, "steps": 5 }
+      "params": {
+        "distance": 450,
+        "steps": 5
+      }
     },
     {
       "id": 3,
-      "name": "2.2 随机观察",
-      "skill": "sleep",
-      "action": "sleep",
-      "params": { "seconds": "1.5-3.0" }
+      "name": "2.2 拟人化阅读漫游",
+      "skill": "human_idle_move",
+      "action": "human_idle_move",
+      "params": {
+        "duration": 3.5,
+        "steps": 25
+      }
     },
     {
       "id": 4,
-      "name": "3. 点击内容区 (唤醒)",
-      "skill": "click_landmark",
-      "action": "click_landmark",
+      "name": "2.3 多重回滚 (Home)",
+      "skill": "press_keys",
+      "action": "press_keys",
       "params": {
-        "keywords": ["Inputs", "Input", "Inpuis"]
+        "keys": [
+          "home",
+          "home"
+        ],
+        "interval": 0.3
       }
     },
     {
       "id": 5,
-      "name": "4. 内部视图切换 (随机节奏)",
-      "skill": "press_keys",
-      "action": "press_keys",
+      "name": "2.4 强力上滚补位",
+      "skill": "human_scroll",
+      "action": "human_scroll",
       "params": {
-        "keys": ["down", "right", "left"],
-        "interval": "0.5-2.0"
+        "distance": -1500,
+        "steps": 6
       }
     },
     {
       "id": 6,
-      "name": "5. 暴力巡航 Response A",
-      "skill": "zoom_pan_cruise",
-      "action": "zoom_pan_cruise",
+      "name": "3. 点击内容区 (唤醒)",
+      "skill": "click_landmark",
+      "action": "click_landmark",
       "params": {
-        "landmark_keywords": ["Response A", "Response"],
-        "scroll_amount": [4, 9],
-        "pan_dx": 80,
-        "pan_dy": 60
+        "keywords": [
+          "Inputs",
+          "Input",
+          "Inpuis"
+        ],
+        "offset_y": 120
       }
     },
     {
       "id": 7,
-      "name": "6. 内部视图切换 (至 B)",
+      "name": "4. 内部视图切换 (随机节奏)",
       "skill": "press_keys",
       "action": "press_keys",
-      "params": { 
-        "keys": ["right"],
-        "interval": 1.0
+      "params": {
+        "keys": [
+          "down",
+          "right",
+          "left"
+        ],
+        "interval": 1.2
       }
     },
     {
       "id": 8,
-      "name": "7. 暴力巡航 Response B",
+      "name": "5. 暴力巡航 Response A",
       "skill": "zoom_pan_cruise",
       "action": "zoom_pan_cruise",
       "params": {
-        "landmark_keywords": ["Response B", "Response"],
-        "scroll_amount": [3, 8],
-        "pan_dx": -100,
+        "keywords": [
+          "Response A",
+          "Response"
+        ],
+        "scroll_amount": [
+          3,
+          5
+        ],
+        "pan_dx": -80,
         "pan_dy": 60
       }
     },
     {
       "id": 9,
-      "name": "8. 退出巡航 (Esc)",
+      "name": "6. 内部视图切换 (至 B)",
       "skill": "press_keys",
       "action": "press_keys",
-      "params": { "keys": ["esc"] }
+      "params": {
+        "keys": [
+          "right"
+        ],
+        "interval": 1.0
+      }
     },
     {
       "id": 10,
-      "name": "9. AI 视觉深度分析",
-      "skill": "ai_analyze",
-      "action": "ai_analyze",
+      "name": "7. 暴力巡航 Response B",
+      "skill": "zoom_pan_cruise",
+      "action": "zoom_pan_cruise",
       "params": {
-        "prompt_type": "tina_marking",
-        "save_debug": true
+        "keywords": [
+          "Response B",
+          "Response"
+        ],
+        "scroll_amount": [
+          2,
+          6
+        ],
+        "pan_dx": -100,
+        "pan_dy": 60
+      }
+    },
+    {
+      "id": 11,
+      "name": "7.1 退出放大视图 (Esc)",
+      "skill": "press_keys",
+      "action": "press_keys",
+      "params": {
+        "keys": [
+          "esc"
+        ],
+        "interval": 1.0
+      }
+    },
+    {
+      "id": 12,
+      "name": "8. 模拟真人预读",
+      "skill": "human_idle_move",
+      "params": {
+        "duration": 3.5,
+        "steps": 40
+      }
+    },
+    {
+      "id": 13,
+      "name": "9. 清空 AI 队列",
+      "skill": "ai_clear"
+    },
+    {
+      "id": 14,
+      "name": "10. 滚回顶部",
+      "skill": "scroll_up",
+      "params": {
+        "times": 5
+      }
+    },
+    {
+      "id": 15,
+      "name": "11. 抓取顶部快照",
+      "skill": "ai_snap"
+    },
+    {
+      "id": 16,
+      "name": "12. 滑到底部",
+      "skill": "scroll_down",
+      "params": {
+        "times": 5
+      }
+    },
+    {
+      "id": 17,
+      "name": "13. 抓取底部快照",
+      "skill": "ai_snap"
+    },
+    {
+      "id": 18,
+      "name": "14. 模拟检查思考",
+      "skill": "human_idle_move",
+      "params": {
+        "duration": 4.5,
+        "steps": 50
+      }
+    },
+    {
+      "id": 19,
+      "name": "15. 切换并投喂给 AI",
+      "skill": "ai_analyze",
+      "params": {
+        "prompt": "这是图片评分任务截图, 包含指令要求input/原图， 文字要求和Response A/B两张对比图。\n\n请按以下评分维度,直接输出：文字要求翻译成非常简短的中文描述，维度名: [Response A / Response B / Both Good / Both Bad]。\n\n注意: 不要多余理由,只给选项。维度包括:\n1. Overall Preference\n2. Instruction Following\n3. ID Preservation\n4. Content Preservation\n5. Visual Quality\n6. Less AI Generated, 最后输出一个最佳答案选的原因， 100字节的英文， 不要标点符号。"
       }
     }
   ]

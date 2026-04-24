@@ -36,6 +36,13 @@ class OCRReader:
             
         return "\n".join(context_lines)
 
+    def get_detailed_results(self, image_np: np.ndarray):
+        """
+        返回原始 OCR 结果列表，包含 bbox, text, prob。
+        """
+        if image_np is None: return []
+        return self.reader.readtext(image_np)
+
     def find_largest_element(self, image_np: np.ndarray, target_text: str):
         """
         寻找所有匹配项中面积最大的那个（通常是 Logo 或主标题）。
