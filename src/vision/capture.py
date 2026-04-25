@@ -63,6 +63,20 @@ class VisionCapture:
                 print(f"Capture NP Error: {e}")
                 return None
 
+    def capture_dock_region(self, dock_rect: Dict[str, int]) -> Optional[np.ndarray]:
+        """
+        [V7.62] 专门为雷达扫描准备的包装器。
+        将 ViewportManager 的 dock_rect 转换为 mss 格式。
+        """
+        if not dock_rect: return None
+        mss_region = {
+            "left": int(dock_rect["x"]),
+            "top": int(dock_rect["y"]),
+            "width": int(dock_rect["width"]),
+            "height": int(dock_rect["height"])
+        }
+        return self.capture_region_np(mss_region)
+
     def compare_images(self, path1: str, path2: str) -> float:
         """
         比较两张图片的差异度。返回差异百分比 (0.0 - 100.0)。

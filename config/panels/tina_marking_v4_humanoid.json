@@ -3,159 +3,6 @@
   "category": "ai",
   "steps": [
     {
-      "id": 1,
-      "name": "1. 初始重置 (Home)",
-      "skill": "press_keys",
-      "action": "press_keys",
-      "params": {
-        "keys": [
-          "home"
-        ],
-        "interval": 1.0
-      }
-    },
-    {
-      "id": 2,
-      "name": "2.强力上滚补位",
-      "skill": "human_scroll",
-      "action": "human_scroll",
-      "params": {
-        "distance": -500,
-        "steps": 3
-      }
-    },
-    {
-      "id": 2,
-      "name": "2.1 碎步下滚 (拟人)",
-      "skill": "human_scroll",
-      "action": "human_scroll",
-      "params": {
-        "distance": 450,
-        "steps": 5
-      }
-    },
-    {
-      "id": 3,
-      "name": "2.2 拟人化阅读漫游",
-      "skill": "human_idle_move",
-      "action": "human_idle_move",
-      "params": {
-        "duration": 3.5,
-        "steps": 25
-      }
-    },
-    {
-      "id": 4,
-      "name": "2.3 多重回滚 (Home)",
-      "skill": "press_keys",
-      "action": "press_keys",
-      "params": {
-        "keys": [
-          "home",
-          "home"
-        ],
-        "interval": 0.3
-      }
-    },
-    {
-      "id": 5,
-      "name": "2.4 强力上滚补位",
-      "skill": "human_scroll",
-      "action": "human_scroll",
-      "params": {
-        "distance": -1500,
-        "steps": 6
-      }
-    },
-    {
-      "id": 6,
-      "name": "3. 点击内容区 (唤醒)",
-      "skill": "click_landmark",
-      "action": "click_landmark",
-      "params": {
-        "keywords": [
-          "Inputs",
-          "Input",
-          "Inpuis"
-        ],
-        "offset_y": 120
-      }
-    },
-    {
-      "id": 7,
-      "name": "4. 内部视图切换 (随机节奏)",
-      "skill": "press_keys",
-      "action": "press_keys",
-      "params": {
-        "keys": [
-          "down",
-          "right",
-          "left"
-        ],
-        "interval": 1.2
-      }
-    },
-    {
-      "id": 8,
-      "name": "5. 暴力巡航 Response A",
-      "skill": "zoom_pan_cruise",
-      "action": "zoom_pan_cruise",
-      "params": {
-        "keywords": [
-          "Response A",
-          "Response"
-        ],
-        "scroll_amount": [
-          3,
-          5
-        ],
-        "pan_dx": -80,
-        "pan_dy": 60
-      }
-    },
-    {
-      "id": 9,
-      "name": "6. 内部视图切换 (至 B)",
-      "skill": "press_keys",
-      "action": "press_keys",
-      "params": {
-        "keys": [
-          "right"
-        ],
-        "interval": 1.0
-      }
-    },
-    {
-      "id": 10,
-      "name": "7. 暴力巡航 Response B",
-      "skill": "zoom_pan_cruise",
-      "action": "zoom_pan_cruise",
-      "params": {
-        "keywords": [
-          "Response B",
-          "Response"
-        ],
-        "scroll_amount": [
-          2,
-          6
-        ],
-        "pan_dx": -100,
-        "pan_dy": 60
-      }
-    },
-    {
-      "id": 11,
-      "name": "7.1 退出放大视图 (Esc)",
-      "skill": "press_keys",
-      "action": "press_keys",
-      "params": {
-        "keys": [
-          "esc"
-        ],
-        "interval": 1.0
-      }
-    },
-    {
       "id": 12,
       "name": "8. 模拟真人预读",
       "skill": "human_idle_move",
@@ -201,7 +48,7 @@
       "skill": "human_idle_move",
       "params": {
         "duration": 4.5,
-        "steps": 50
+        "steps": 30
       }
     },
     {
@@ -210,6 +57,210 @@
       "skill": "ai_analyze",
       "params": {
         "prompt": "这是图片评分任务截图, 包含指令要求input/原图， 文字要求和Response A/B两张对比图。\n\n请按以下评分维度,直接输出：文字要求翻译成非常简短的中文描述，维度名: [Response A / Response B / Both Good / Both Bad]。\n\n注意: 不要多余理由,只给选项。维度包括:\n1. Overall Preference\n2. Instruction Following\n3. ID Preservation\n4. Content Preservation\n5. Visual Quality\n6. Less AI Generated, 最后输出一个最佳答案选的原因， 100字节的英文， 不要标点符号。"
+      }
+    },
+    {
+      "id": 2,
+      "name": "2.强力上滚补位",
+      "skill": "human_scroll",
+      "action": "human_scroll",
+      "params": {
+        "distance": -800,
+        "steps": 3,
+        "auto_focus": true
+      }
+    },
+    {
+      "id": 2,
+      "name": "2.1 碎步下滚 (拟人)",
+      "skill": "human_scroll",
+      "action": "human_scroll",
+      "params": {
+        "distance": 450,
+        "steps": 5,
+        "auto_focus": true
+      }
+    },
+    {
+      "id": 17,
+      "name": "13. 抓取底部快照",
+      "skill": "ai_snap"
+    },
+    {
+      "id": 3,
+      "name": "2.2 拟人化阅读漫游",
+      "skill": "human_idle_move",
+      "action": "human_idle_move",
+      "params": {
+        "duration": 3.5,
+        "steps": 25
+      }
+    },
+    {
+      "id": 5,
+      "name": "2.4 强力上滚补位",
+      "skill": "human_scroll",
+      "action": "human_scroll",
+      "params": {
+        "distance": -10000,
+        "steps": 8,
+        "auto_focus": true
+      }
+    },
+    {
+      "id": 6,
+      "name": "3. 点击内容区 (唤醒)",
+      "skill": "click_landmark",
+      "action": "click_landmark",
+      "params": {
+        "keywords": [
+          "Inputs",
+          "Input",
+          "Inpuis"
+        ],
+        "offset_y": 80
+      }
+    },
+    {
+      "id": 7,
+      "name": "4. 内部视图切换 (随机节奏)",
+      "skill": "press_keys",
+      "action": "press_keys",
+      "params": {
+        "keys": [
+          "down",
+          "right",
+          "left"
+        ],
+        "interval": 1.2
+      }
+    },
+    {
+      "id": 8,
+      "name": "5. 暴力巡航 Response A",
+      "skill": "zoom_pan_cruise",
+      "action": "zoom_pan_cruise",
+      "params": {
+        "keywords": [
+          "Response A",
+          "Response"
+        ],
+        "scroll_amount": [
+          3,
+          5
+        ],
+        "pan_dx": [
+          -120,
+          -40
+        ],
+        "pan_dy": [
+          40,
+          120
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "name": "6. 内部视图切换 (至 B)",
+      "skill": "press_keys",
+      "action": "press_keys",
+      "params": {
+        "keys": [
+          "right"
+        ],
+        "interval": 1.0
+      }
+    },
+    {
+      "id": 10,
+      "name": "7. 暴力巡航 Response B",
+      "skill": "zoom_pan_cruise",
+      "action": "zoom_pan_cruise",
+      "params": {
+        "keywords": [
+          "Response B",
+          "Response"
+        ],
+        "scroll_amount": [
+          2,
+          6
+        ],
+        "pan_dx": [
+          -150,
+          -50
+        ],
+        "pan_dy": [
+          40,
+          120
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "name": "7.1 退出放大视图 (Esc)",
+      "skill": "press_keys",
+      "action": "press_keys",
+      "params": {
+        "keys": [
+          "esc"
+        ],
+        "critical": true,
+        "interval": 1.0
+      }
+    },
+    {
+      "id": 13,
+      "name": "9. 开启 Response A 详情",
+      "skill": "click_landmark_radar",
+      "params": {
+        "keywords": [
+          "Response"
+        ],
+        "offset_x": 325,
+        "offset_y": 80
+      }
+    },
+    {
+      "id": 12.1,
+      "name": "12.1 强力上滚补位",
+      "skill": "human_scroll",
+      "action": "human_scroll",
+      "params": {
+        "distance": -5000,
+        "steps": 8,
+        "auto_focus": true
+      }
+    },
+    {
+      "id": 15,
+      "name": "10. 暴力巡航 A/B",
+      "skill": "press_keys",
+      "params": {
+        "keys": [
+          "right",
+          "left",
+          "left",
+          "right"
+        ],
+        "interval": 1.5
+      }
+    },
+    {
+      "id": 15,
+      "name": "11. 退出详情 (Esc)",
+      "skill": "press_keys",
+      "params": {
+        "keys": [
+          "esc"
+        ]
+      }
+    },
+    {
+      "id": 16,
+      "name": "12. 滑到底部",
+      "skill": "scroll_down",
+      "params": {
+        "times": 5
       }
     }
   ]

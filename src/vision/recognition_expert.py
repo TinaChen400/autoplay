@@ -19,28 +19,33 @@ class RecognitionExpert:
         if self._paddle is None:
             try:
                 from paddleocr import PaddleOCR
-                self._paddle = PaddleOCR(use_angle_cls=True, lang='ch', use_gpu=True, show_log=False)
-            except ImportError:
-                print("[EXPERT] Warning: PaddleOCR not installed. Falling back.")
+                # [V7.64] 极简初始化，移除 show_log 以兼容所有版本
+                self._paddle = PaddleOCR(use_angle_cls=True, lang='ch')
+            except Exception as e:
+                print(f"[EXPERT] PaddleOCR Init Failed: {e}. Falling back to standard engine.")
                 return None
         return self._paddle
 
-    def find_landmark(self, img_np: np.ndarray, keywords: List[str], engines: List[str] = ["easyocr"]) -> Optional[Tuple[int, int]]:
+    def find_landmark(self, img_np: np.ndarray, keywords: List[str], engines: List[str] = ["paddleocr", "easyocr"]) -> Optional[Tuple[int, int]]:
         """
-        按顺序调用不同引擎寻找目标
+        [V7.65] 异常隔离识别：确保任何引擎报错都不会导致主任务崩溃
         """
         for engine in engines:
-            print(f"[EXPERT] Trying engine: {engine}")
-            result = None
-            
-            if engine == "easyocr":
-                result = self._find_via_easyocr(img_np, keywords)
-            elif engine == "paddleocr":
-                result = self._find_via_paddleocr(img_np, keywords)
-            
-            if result:
-                print(f"[EXPERT] Match found via {engine}: {result}")
-                return result
+            try:
+                print(f"[EXPERT] Trying engine: {engine}")
+                result = None
+                
+                if engine == "easyocr":
+                    result = self._find_via_easyocr(img_np, keywords)
+                elif engine == "paddleocr":
+                    result = self._find_via_paddleocr(img_np, keywords)
+                
+                if result:
+                    print(f"[EXPERT] Match found via {engine}: {result}")
+                    return result
+            except Exception as e:
+                print(f"[EXPERT] Engine {engine} runtime error: {e}. Trying next...")
+                continue
                 
         return None
 
@@ -59,8 +64,8 @@ class RecognitionExpert:
         paddle = self._get_paddleocr()
         if not paddle: return None
         
-        # PaddleOCR 返回格式: [ [ [bbox], (text, score) ], ... ]
-        results = paddle.ocr(img_np, cls=True)
+        # [V7.65] 极简调用，移除 cls 参数
+        results = paddle.ocr(img_np)
         if not results or not results[0]: return None
         
         for line in results[0]:

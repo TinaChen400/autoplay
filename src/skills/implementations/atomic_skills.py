@@ -10,6 +10,7 @@ import win32con
 import win32gui
 from src.skills.registry import skill_handler
 from src.core.viewport import ViewportManager
+from src.skills.humanize import smooth_move
 
 logger = logging.getLogger("AtomicSkills")
 
@@ -101,8 +102,8 @@ def click_grid_cell(vm: ViewportManager, row_keywords: list, col_keywords: list,
     cv2.circle(img, target_pos, 10, (255, 0, 0), -1)
     cv2.imwrite(os.path.join(agent.records_dir, "click_verification.jpg"), img)
 
-    # 执行物理点击
-    win32api.SetCursorPos((int(rect["x"] + target_pos[0]), int(rect["y"] + target_pos[1])))
+    # 执行物理点击 (带丝滑滑动)
+    smooth_move(int(rect["x"] + target_pos[0]), int(rect["y"] + target_pos[1]), duration=0.4)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
     time.sleep(0.05)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
@@ -161,8 +162,8 @@ def scroll_up_skill(vm: ViewportManager, times: int = 5, **kwargs) -> bool:
     import win32api, win32con
     rect = vm.dock_rect
     if rect:
-        # 先把鼠标移到窗口中心，确保滚轮生效
-        win32api.SetCursorPos((int(rect["x"] + rect["width"]/2), int(rect["y"] + rect["height"]/2)))
+        # 丝滑对焦到窗口中心，确保滚轮生效
+        smooth_move(int(rect["x"] + rect["width"]/2), int(rect["y"] + rect["height"]/2), duration=0.3)
     for _ in range(times):
         win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, 400, 0)
         time.sleep(0.1)
@@ -173,89 +174,13 @@ def scroll_down_skill(vm: ViewportManager, times: int = 5, **kwargs) -> bool:
     import win32api, win32con
     rect = vm.dock_rect
     if rect:
-        # 先把鼠标移到窗口中心，确保滚轮生效
-        win32api.SetCursorPos((int(rect["x"] + rect["width"]/2), int(rect["y"] + rect["height"]/2)))
+        # 丝滑对焦到窗口中心，确保滚轮生效
+        smooth_move(int(rect["x"] + rect["width"]/2), int(rect["y"] + rect["height"]/2), duration=0.3)
     for _ in range(times):
         win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, -400, 0)
         time.sleep(0.1)
     return True
 
-@skill_handler("human_idle_move")
-def human_idle_move(vm: ViewportManager, duration: float = 2.0, steps: int = 15, **kwargs) -> bool:
-    """
-    [V7.65] 拟人化安全漫游：三重物理锁死，绝不越界
-    """
-    import random
-    import time
-    import win32api
-    import win32gui
-    import win32con
-    
-    # 0. 基础环境感知
-    screen_w = win32api.GetSystemMetrics(win32con.SM_CXSCREEN)
-    screen_h = win32api.GetSystemMetrics(win32con.SM_CYSCREEN)
-    
-    # [V7.80] 智能探测模式：放宽匹配 + 失败全量诊断
-    from src.drivers.window import WindowManager
-    import win32gui
-    
-    wm = WindowManager(keywords=["Tina", "流畅"])
-    rect_raw = wm.get_window_rect()
-    
-    if not rect_raw:
-        print("!!! [IDLE_MOVE] 警告：找不到 Tina 窗口，正在扫描全系统窗口标题以供诊断...")
-        def dump_titles(hwnd, _):
-            if win32gui.IsWindowVisible(hwnd):
-                t = win32gui.GetWindowText(hwnd)
-                if t: print(f"  - [DEBUG] 发现窗口: {t}")
-        win32gui.EnumWindows(dump_titles, None)
-        
-        # 兜底：执行屏幕中心漫游，不中断任务
-        rect = {"x": 500, "y": 300, "w": 800, "h": 600}
-        target_hwnd = None
-    else:
-        print(f">>> [IDLE_MOVE] 锁定成功！[{rect_raw.get('title')}]")
-        rect = {"x": rect_raw["left"], "y": rect_raw["top"], 
-                "w": rect_raw["width"], "h": rect_raw["height"]}
-        target_hwnd = wm.hwnd
-        
-    # [V7.71] 修正激活逻辑：直接调用 Win32 原生句柄
-    if target_hwnd:
-        try:
-            # 如果窗口最小化了，先恢复它
-            if win32gui.IsIconic(target_hwnd):
-                win32gui.ShowWindow(target_hwnd, win32con.SW_RESTORE)
-            win32gui.SetForegroundWindow(target_hwnd)
-            time.sleep(0.2)
-        except Exception as e:
-            print(f"!!! [IDLE_MOVE] 激活窗口失败: {e}")
-    
-    print(f">>> [IDLE_MOVE] 已锁定目标漫游区: {rect}")
-    
-    # 2. 漫游目标：窗口左侧 20% - 60% 区域 (避开右侧滚动条)
-    target_x = rect["x"] + int(rect["w"] * 0.2) + random.randint(0, int(rect["w"] * 0.4))
-    target_y = rect["y"] + int(rect["h"] * 0.3) + random.randint(0, int(rect["h"] * 0.4))
-    
-    # 3. 初始归位 (先回到安全区)
-    win32api.SetCursorPos((target_x, target_y))
-    time.sleep(0.1)
-    
-    curr_x, curr_y = win32api.GetCursorPos()
-    
-    # 4. 漫游轨迹 (双重物理锁死)
-    for i in range(steps):
-        t = (i + 1) / steps
-        step_x = int(curr_x + (target_x - curr_x) * t)
-        step_y = int(curr_y + (target_y - curr_y) * t)
-        
-        # 钳制在窗口内，留出 150 像素安全边距
-        final_x = max(rect["x"] + 150, min(step_x, rect["x"] + rect["w"] - 150))
-        final_y = max(rect["y"] + 150, min(step_y, rect["y"] + rect["h"] - 150))
-        
-        win32api.SetCursorPos((final_x, final_y))
-        time.sleep(duration / steps)
-        
-    return True
 
 @skill_handler("find_and_click")
 def find_and_click(vm: ViewportManager, keywords: list, **kwargs) -> bool:
@@ -270,7 +195,7 @@ def find_and_click(vm: ViewportManager, keywords: list, **kwargs) -> bool:
         text_clean = text.lower().strip()
         if any(kw.lower() in text_clean for kw in keywords):
             tx, ty = (int((bbox[0][0] + bbox[1][0]) / 2), int((bbox[0][1] + bbox[2][1]) / 2))
-            win32api.SetCursorPos((int(rect["x"] + tx), int(rect["y"] + ty)))
+            smooth_move(int(rect["x"] + tx), int(rect["y"] + ty), duration=0.5)
             win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
             time.sleep(0.05)
             win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)

@@ -49,6 +49,9 @@ class TaskPanel(QWidget):
         
         tasks = [
             {"name": "【核心】窗口物理锁定与吸附对齐", "desc": "强制固定远程窗口位置并移除边框"},
+            {"name": "【测试】全页面多行自动对位", "desc": "测试多行连续对位 (Overall, Instruction, Visual...)"},
+            {"name": "【测试】OCR 行对位精准打击", "desc": "测试 V15.7 视觉对位引擎 (Overall -> Response B)"},
+            {"name": "【实验】OCR 动态内容区定位测试", "desc": "测试 V12.0 偏移引导功能 (Inputs 区域)"},
             {"name": "【高级】AI 全自动双图研判", "desc": "按 ai_flow.json 步骤执行全流程打分"},
             {"name": "【诊断】视觉引擎精度比武", "desc": "对比 OCR 与 布局分析 引擎的识别精度"},
             {"name": "【高级】豆包视觉：图标深度识别", "desc": "调用 Seed-1.8 大模型识别图片中的小图标"},

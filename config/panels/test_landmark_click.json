@@ -1,0 +1,15 @@
+{
+  "panel_name": "OCR 动态偏移点击",
+  "steps": [
+    {
+      "id": 1,
+      "name": "【视觉引导】点击 Inputs 区域",
+      "skill": "click_landmark",
+      "action": "click_landmark",
+      "params": {
+        "keywords": ["Inputs", "Input"],
+        "offset_y": 80
+      }
+    }
+  ]
+}

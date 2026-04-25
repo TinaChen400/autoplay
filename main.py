@@ -69,7 +69,7 @@ class AIAgentApp:
         # 1. 基础驱动初始化
         self.viewport_manager = ViewportManager()
         kw = self.viewport_manager.config.get("window_keyword", "Tina")
-        self.window_manager = WindowManager()
+        self.window_manager = WindowManager(keywords=[kw, "MSI", "Chrome", "Response", "Google Chrome"])
         self.viewport_manager = ViewportManager()
         self.vision_capture = VisionCapture()
         
@@ -214,6 +214,23 @@ class AIAgentApp:
             threading.Thread(target=self._run_triple_engine_test, daemon=True).start()
         elif "图标" in tn or "豆包" in tn:
             threading.Thread(target=self._run_ai_icon_recognition, daemon=True).start()
+        elif "ocr" in tn or "对位" in tn or "定位" in tn:
+            # [V12.1] OCR 专项测试分发
+            if "多行" in tn:
+                flow_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config", "panels", "test_multi_row.json")
+            elif "行对位" in tn:
+                flow_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config", "panels", "test_ocr_click.json")
+            else:
+                flow_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config", "panels", "test_landmark_click.json")
+            self.log("SYSTEM", f"正在加载 OCR 专项测试: {os.path.basename(flow_path)}")
+            self.bridge.load_mission(custom_path=flow_path)
+            
+            def _async_test_start():
+                self.log("SYSTEM", ">>> 启动视觉对位测试序列...")
+                self._skill_force_activate()
+                self.bridge.run_mission(callback=lambda: QTimer.singleShot(0, self._update_bridge_status))
+                
+            threading.Thread(target=_async_test_start, daemon=True).start()
         else:
             print(f"[WARNING] 未知任务名: {task_name}")
             self.log("WARNING", "该任务逻辑尚未标准化。")
@@ -232,9 +249,12 @@ class AIAgentApp:
         else:
             # 任务结束或空闲
             rect = self.window_manager.get_window_rect()
-            w = rect.get('width', 0)
-            h = rect.get('height', 0)
-            msg = f"HUD V6.6 | 准备就绪 {w}x{h}"
+            if rect:
+                w = rect.get('width', 0)
+                h = rect.get('height', 0)
+                msg = f"HUD V6.6 | 准备就绪 {w}x{h}"
+            else:
+                msg = "HUD V6.6 | 等待窗口锁定..."
             
         # 安全更新 UI
         try:
@@ -264,7 +284,19 @@ class AIAgentApp:
         
         if success:
             rect = self.window_manager.get_window_rect()
-            # [V7.39] 同步视口数据到技能引擎，防止 atomic_skills 崩溃
+            self.log("SUCCESS", f"窗口已物理锁定: ({rect['left']}, {rect['top']})")
+        else:
+            # [V7.40] 强力兜底：如果锁定失败，尝试直接抓取当前活跃窗口坐标
+            rect = self.window_manager.get_window_rect()
+            if rect:
+                self.log("WARNING", f"暴力锁定未完全成功，但已强行抓取到坐标: ({rect['left']}, {rect['top']})")
+            else:
+                self.log("ERROR", "未找到匹配窗口，请确认远程窗口已打开且标题包含 Tina/MSI/Chrome。")
+                return
+
+        # --- 统一同步路径 ---
+        if rect:
+            # [V7.39] 同步视口数据到技能引擎
             if hasattr(self.bridge.skills, 'vm'):
                 self.bridge.skills.vm.update_dock_rect({
                     "x": rect['left'], "y": rect['top'], 
@@ -294,16 +326,6 @@ class AIAgentApp:
                     ctypes.windll.user32.SetForegroundWindow(hwnd)
                 except:
                     pass
-        else:
-            self.log("ERROR", "未找到匹配窗口，请确认远程窗口已打开。")
-
-    def _update_bridge_status(self):
-        """[V7.0] 将 Bridge 的步骤状态反馈到 HUD"""
-        current_step = next((s for s in self.bridge.steps if s.status == "running"), None)
-        if current_step:
-            self.overlay.status_msg = f"RUNNING | {current_step.name}"
-        else:
-            self.overlay.status_msg = f"HUD V6.6 | {self.window_manager.get_window_rect().get('width', 0)}x{self.window_manager.get_window_rect().get('height', 0)}"
 
     def _sync_ui_safe(self, x, y, w, h, status):
         """主线程安全更新 HUD"""

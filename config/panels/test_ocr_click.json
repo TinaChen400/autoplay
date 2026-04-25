@@ -1,0 +1,15 @@
+{
+  "panel_name": "OCR 动态定位测试",
+  "steps": [
+    {
+      "id": 1,
+      "name": "【行级狙击】点击 Overall 行的 Response B",
+      "skill": "click_row_target",
+      "action": "click_row_target",
+      "params": {
+        "keywords": ["Overall"],
+        "target_keyword": "Response B"
+      }
+    }
+  ]
+}

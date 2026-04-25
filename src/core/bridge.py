@@ -153,48 +153,62 @@ class TaskBridge:
         self.reset()
         
         def _chain_executor():
+            start_time = time.time()
             self._log("[MISSION] 后台执行引擎已就绪。")
-            for i in range(len(self.steps)):
-                if getattr(self, '_stop_requested', False):
-                    self._log("[MISSION] 接收到终止信号，流程中断。")
-                    break
-                    
-                step = self.steps[i]
-                step_info = f"第 {i+1}/{len(self.steps)} 步: {step.name}"
-                self._log(f"[MISSION] 正在执行: {step_info}")
-                
-                try:
-                    step.status = "running"
-                    if callback: callback()
-                    
-                    # [V7.05] 反射调用
-                    if not hasattr(self.skills, step.methodName):
-                        self._log(f"[MISSION] 错误: 找不到技能函数 {step.methodName}")
-                        step.status = "failed"
-                        if callback: callback()
+            try:
+                for i in range(len(self.steps)):
+                    if getattr(self, '_stop_requested', False):
+                        self._log("[MISSION] 接收到终止信号，流程中断。")
                         break
                         
-                    method = getattr(self.skills, step.methodName)
-                    # 尝试调用并捕获结果
-                    result = method(**step.params)
+                    step = self.steps[i]
+                    step_info = f"第 {i+1}/{len(self.steps)} 步: {step.name}"
+                    self._log(f"[MISSION] 正在执行: {step_info}")
                     
-                    if result is False:
-                        self._log(f"[MISSION] 步骤执行返回失败。流程中断。")
+                    try:
+                        step.status = "running"
+                        if callback: callback()
+                        
+                        # [V7.05] 反射调用
+                        if not hasattr(self.skills, step.methodName):
+                            self._log(f"[MISSION] 错误: 找不到技能函数 {step.methodName}")
+                            step.status = "failed"
+                            if callback: callback()
+                            break
+                            
+                        method = getattr(self.skills, step.methodName)
+                        # 尝试调用并捕获结果
+                        result = method(**step.params)
+                        
+                        if result is False:
+                            self._log(f"[MISSION] 警告: 步骤 {step.name} 返回失败。")
+                            step.status = "failed"
+                            
+                            # [V7.45] 容错机制：除非标记为关键步骤，否则不中断流程
+                            if step.params.get("critical", False):
+                                self._log(f"[MISSION] 检测到关键步骤失败，流程中断。")
+                                if callback: callback()
+                                break
+                            else:
+                                self._log(f"[MISSION] 非关键步骤，继续执行后续任务...")
+                        else:
+                            step.status = "success"
+                            self._log(f"[MISSION] 完成: {step.name}")
+                        
+                        if callback: callback()
+                        time.sleep(1.2) # 步骤间自然停顿
+                    except Exception as e:
+                        import traceback
+                        self._log(f"[MISSION] 崩溃详情: {traceback.format_exc()}")
                         step.status = "failed"
                         if callback: callback()
                         break
-                    
-                    step.status = "success"
-                    self._log(f"[MISSION] 完成: {step.name}")
-                    if callback: callback()
-                    time.sleep(1.2) # 步骤间自然停顿
-                except Exception as e:
-                    import traceback
-                    self._log(f"[MISSION] 崩溃详情: {traceback.format_exc()}")
-                    step.status = "failed"
-                    if callback: callback()
-                    break
-            self._log("[MISSION] <<< 全自动任务流程执行完毕。")
+            finally:
+                # [V7.50] 强制结算计时逻辑
+                duration = time.time() - start_time
+                self._log("=" * 40)
+                self._log(f"[MISSION] 任务流程结束。总耗时: {duration:.2f} 秒")
+                self._log("=" * 40)
 
         threading.Thread(target=_chain_executor, daemon=True).start()
 

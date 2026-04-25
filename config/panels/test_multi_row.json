@@ -1,0 +1,48 @@
+{
+  "panel_name": "全页面多行自动对位",
+  "steps": [
+    {
+      "id": 1,
+      "name": "【行 1】Overall -> Response B",
+      "skill": "click_row_target",
+      "action": "click_row_target",
+      "params": {
+        "keywords": ["Overall", "Preference"],
+        "target_keyword": "Response B",
+        "step_id": 1
+      }
+    },
+    {
+      "id": 2,
+      "skill": "sleep",
+      "params": { "seconds": 0.8 }
+    },
+    {
+      "id": 3,
+      "name": "【行 2】Instruction -> Response B",
+      "skill": "click_row_target",
+      "action": "click_row_target",
+      "params": {
+        "keywords": ["Instruction", "Following"],
+        "target_keyword": "Response B",
+        "step_id": 2
+      }
+    },
+    {
+      "id": 4,
+      "skill": "sleep",
+      "params": { "seconds": 0.8 }
+    },
+    {
+      "id": 5,
+      "name": "【行 3】Visual Quality -> Both Good",
+      "skill": "click_row_target",
+      "action": "click_row_target",
+      "params": {
+        "keywords": ["Visual", "Quality"],
+        "target_keyword": "Both Good",
+        "step_id": 3
+      }
+    }
+  ]
+}

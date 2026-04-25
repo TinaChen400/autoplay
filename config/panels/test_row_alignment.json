@@ -1,0 +1,15 @@
+{
+  "panel_name": "行对位精准测试",
+  "steps": [
+    {
+      "id": 1,
+      "name": "【核心验证】根据 Overall 定位 Response B",
+      "skill": "click_row_target",
+      "action": "click_row_target",
+      "params": {
+        "keywords": ["Overall"],
+        "target_keyword": "Response B"
+      }
+    }
+  ]
+}

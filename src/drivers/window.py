@@ -5,11 +5,7 @@ import os
 from ctypes import wintypes
 from typing import Optional, Dict
 
-# 全程开启物理像素感知
-try:
-    ctypes.windll.shcore.SetProcessDpiAwareness(1)
-except:
-    ctypes.windll.user32.SetProcessDPIAware()
+# [回归稳定] 移除强制物理像素感知，允许回归系统默认的逻辑缩放 (如 1.25x)
 
 class WindowManager:
     """
@@ -19,17 +15,20 @@ class WindowManager:
     def __init__(self, keywords: list = None):
         self.keywords = keywords if keywords else ["Tina"]
         self.hwnd = None
+        self._frozen_rect = None # [V9.7] 绝对冻结坐标缓存
 
     def lock_window_to_size(self, w: int, h: int, x: int = 10, y: int = 10) -> bool:
         """
-        [V6.0] 暴力锁定窗口：移除边框、置顶并强制对齐。
+        [V6.1] 强力锁定：遍历所有关键字寻找目标，移除边框并强制对齐。
         """
         from src.drivers.window import WindowLock
-        locker = WindowLock(keyword=self.keywords[0])
-        success = locker.lock_and_align(x, y, w, h)
-        if success:
-            self.hwnd = locker.find_window()
-        return success
+        for kw in self.keywords:
+            locker = WindowLock(keyword=kw)
+            success = locker.lock_and_align(x, y, w, h)
+            if success:
+                self.hwnd = locker.find_window()
+                return True
+        return False
 
     def find_remote_window(self) -> Optional[int]:
         def callback(hwnd, hwnds):
@@ -63,14 +62,15 @@ class WindowManager:
 
     def get_window_rect(self) -> Optional[Dict[str, int]]:
         """
-        利用 DWM API 提取窗口真实的可见物理边框（不含阴影）。
+        [V9.95] 智能锁定：优先使用缓存，但允许在未完全吸附时动态刷新。
         """
-        if not self.hwnd:
-            self.find_remote_window()
-        
         if self.hwnd:
             try:
-                # 获取 DWM 物理可见边界
+                # 检查句柄是否有效
+                if not win32gui.IsWindow(self.hwnd):
+                    self.hwnd = None
+                    return None
+
                 rect = wintypes.RECT()
                 DWMWA_EXTENDED_FRAME_BOUNDS = 9
                 res = ctypes.windll.dwmapi.DwmGetWindowAttribute(
@@ -79,24 +79,10 @@ class WindowManager:
                     ctypes.byref(rect),
                     ctypes.sizeof(rect)
                 )
+                l, t, r, b = (rect.left, rect.top, rect.right, rect.bottom) if res == 0 else win32gui.GetWindowRect(self.hwnd)
                 
-                if res != 0:
-                    # 降级：如果 DWM 获取失败，使用常规模式
-                    l, t, r, b = win32gui.GetWindowRect(self.hwnd)
-                else:
-                    l, t, r, b = rect.left, rect.top, rect.right, rect.bottom
-                
-                w = r - l
-                h = b - t
-                
-                # 过滤异常值 (如最小化状态)
-                if l < -10000 or t < -10000: return None
-                    
                 return {
-                    "left": l,
-                    "top": t,
-                    "width": w,
-                    "height": h,
+                    "left": l, "top": t, "width": r - l, "height": b - t,
                     "title": win32gui.GetWindowText(self.hwnd)
                 }
             except Exception:
@@ -160,10 +146,10 @@ class WindowLock:
         # 1. 解除最大化并准备修改样式
         win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
         
-        # 2. [V5.3] 激进样式锁定：彻底移除标题栏和边框，强制变为纯净矩形
+        # 2. [V5.3] 激进样式锁定：彻底移除标题栏、边框、最大化样式
         style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
-        # 移除标题栏 (WS_CAPTION), 边框 (WS_THICKFRAME) 和最小/最大化按钮
-        style &= ~(win32con.WS_CAPTION | win32con.WS_THICKFRAME | win32con.WS_MINIMIZEBOX | win32con.WS_MAXIMIZEBOX)
+        # 移除标题栏 (WS_CAPTION), 边框 (WS_THICKFRAME), 最小/最大化按钮, 以及最大化状态 (WS_MAXIMIZE)
+        style &= ~(win32con.WS_CAPTION | win32con.WS_THICKFRAME | win32con.WS_MINIMIZEBOX | win32con.WS_MAXIMIZEBOX | win32con.WS_MAXIMIZE)
         win32gui.SetWindowLong(hwnd, win32con.GWL_STYLE, style)
         
         # 3. [V5.6] 暴力强推模式：连续发送位置指令并强制置顶
