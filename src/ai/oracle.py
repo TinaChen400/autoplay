@@ -140,6 +140,7 @@ class GPTOracle:
                                      win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW)
                 
                 time.sleep(0.5)
+                self.last_hwnd = target_hwnd
                 return True
             except Exception as e:
                 print(f"[ORACLE] 激活窗口失败: {e}")

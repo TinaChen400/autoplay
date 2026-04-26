@@ -113,6 +113,15 @@ class AIAgentApp:
         
         # 6. 自动测试钩子
         QTimer.singleShot(1500, lambda: self.initiate_task("【核心】窗口物理锁定与吸附对齐"))
+        
+        # [V27.2] 异步预热：5秒后在后台静默加载 OCR 引擎到 GPU，防止首次点击死机
+        def _silent_warmup():
+            time.sleep(5)
+            self.log("SYSTEM", "正在后台预热 GPU 视觉引擎...")
+            self.vision_capture.get_ocr()
+            self.log("SYSTEM", "视觉引擎预热完毕。")
+            
+        threading.Thread(target=_silent_warmup, daemon=True).start()
 
     def _setup_ui(self):
         """组装侧边控制面板"""
@@ -214,6 +223,18 @@ class AIAgentApp:
             threading.Thread(target=self._run_triple_engine_test, daemon=True).start()
         elif "图标" in tn or "豆包" in tn:
             threading.Thread(target=self._run_ai_icon_recognition, daemon=True).start()
+        elif "闭环" in tn or "决策" in tn:
+            # [V12.5] 加载专项决策闭环测试
+            flow_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config", "panels", "test_ai_closed_loop.json")
+            self.log("SYSTEM", f"正在加载决策闭环测试: {os.path.basename(flow_path)}")
+            self.bridge.load_mission(custom_path=flow_path)
+            
+            def _async_decision_start():
+                self.log("SYSTEM", ">>> 启动决策闭环测试序列...")
+                self._skill_force_activate()
+                self.bridge.run_mission(callback=lambda: QTimer.singleShot(0, self._update_bridge_status))
+                
+            threading.Thread(target=_async_decision_start, daemon=True).start()
         elif "ocr" in tn or "对位" in tn or "定位" in tn:
             # [V12.1] OCR 专项测试分发
             if "多行" in tn:

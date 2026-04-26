@@ -3,6 +3,7 @@ import math
 import time
 import random
 import win32api
+import win32con
 import logging
 from src.core.viewport import ViewportManager
 
@@ -13,19 +14,23 @@ def random_delay(min_sec: float = 0.2, max_sec: float = 0.8):
     time.sleep(random.uniform(min_sec, max_sec))
 
 def ensure_focus(vm: ViewportManager, enabled=True):
-    """全局拟人化对焦：在窗口右侧安全区执行一次物理点击"""
+    """
+    [V13.0] 恢复版：配合 JSON 精细化控制，确保关键步骤（如退出巡航、一键触底）能拿回焦点。
+    """
     if not enabled: return
     rect = vm.dock_rect
     if rect:
-        # [V9.6] 在窗口右侧边缘 (85%-95%) 且垂直中部随机点一下
-        rx = rect["x"] + random.randint(int(rect["width"] * 0.85), int(rect["width"] * 0.95))
-        ry = rect["y"] + random.randint(int(rect["height"] * 0.3), int(rect["height"] * 0.7))
+        # [V17.3] 换用原生 Win API 点击，确保全局驱动一致
+        rx = rect["x"] + int(rect["width"] * 0.9)
+        ry = rect["y"] + int(rect["height"] * 0.5)
         
-        # 物理移动并点击
-        import pyautogui
-        pyautogui.click(rx, ry)
-        time.sleep(random.uniform(0.1, 0.2))
-        logger.info(f"[HUMAN] 自动对焦安全点击: ({rx}, {ry})")
+        win32api.SetCursorPos((rx, ry))
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+        time.sleep(0.05)
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+        
+        time.sleep(0.5)
+        logger.info(f"[HUMAN] 稳健对焦点击 (WinAPI): ({rx}, {ry})")
 
 def smooth_move(target_x, target_y, duration=0.6, steps=25):
     """
@@ -57,3 +62,27 @@ def smooth_move(target_x, target_y, duration=0.6, steps=25):
         win32api.SetCursorPos((curr_x, curr_y))
         # 随机抖动延迟
         time.sleep((duration / steps) * random.uniform(0.8, 1.2))
+
+def human_jitter(target_x, target_y, intensity=4):
+    """
+    [V10.1] 模拟人手点击前的微小对准和颤动。
+    """
+    import random, time, win32api
+    for _ in range(3):
+        jx = target_x + random.randint(-intensity, intensity)
+        jy = target_y + random.randint(-intensity, intensity)
+        win32api.SetCursorPos((jx, jy))
+        time.sleep(random.uniform(0.05, 0.1))
+    # 最终归位
+    win32api.SetCursorPos((target_x, target_y))
+
+def decision_hesitation(min_sec=0.5, max_sec=2.0):
+    """
+    [V10.2] 模拟填表时看着选项思考的停顿。
+    """
+    import time, random
+    # 30% 概率会多停顿一会儿
+    wait = random.uniform(min_sec, max_sec)
+    if random.random() < 0.3:
+        wait += random.uniform(1.0, 3.0)
+    time.sleep(wait)

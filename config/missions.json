@@ -173,6 +173,54 @@
           "description": "使用物理回退坐标关闭大图"
         }
       ]
-    }
+    },
+    "Tina 极速精准评分": [
+      {
+        "name": "1. 对位 Overall 并点击 Response B",
+        "skill": "click_row_target",
+        "params": {
+          "keywords": ["Overall"],
+          "target_keyword": "Response B"
+        }
+      },
+      {
+        "name": "2. 对位 Instruction 并点击 Response B",
+        "skill": "click_row_target",
+        "params": {
+          "keywords": ["Instruction"],
+          "target_keyword": "Response B"
+        }
+      },
+      {
+        "name": "3. 对位 Visual 并点击 Response B",
+        "skill": "click_row_target",
+        "params": {
+          "keywords": ["Visual"],
+          "target_keyword": "Response B"
+        }
+      },
+      {
+        "name": "4. 对位 Content 并点击 Response B",
+        "skill": "click_row_target",
+        "params": {
+          "keywords": ["Content"],
+          "target_keyword": "Response B"
+        }
+      },
+      {
+        "name": "5. 滚动到底部并提交",
+        "skill": "scroll_down",
+        "params": {
+          "times": 8
+        }
+      },
+      {
+        "name": "6. 点击提交按钮",
+        "skill": "click_landmark",
+        "params": {
+          "keywords": ["Submit", "Vote"]
+        }
+      }
+    ]
   }
 }

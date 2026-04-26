@@ -35,10 +35,10 @@ class VisualSkillsMixin:
         if not found_pos:
             return False
 
-        # 2. 动态比例计算与对位
-        logi_w, _ = pyautogui.size()
-        full_screen_w = win32api.GetSystemMetrics(win32con.SM_CXSCREEN)
-        scale = full_screen_w / logi_w
+        # 获取逻辑分辨率和物理分辨率的比例
+        logi_w = win32api.GetSystemMetrics(win32con.SM_CXSCREEN)
+        phys_w = win32api.GetSystemMetrics(win32con.SM_CXSCREEN) # 这里通常是一致的，或者通过 GetSystemMetrics 获取
+        scale = 1.0 # 巡航内部采用逻辑坐标
         
         target_x = int((win_px + found_pos[0]) / scale) + offset_x
         target_y = int((win_py + found_pos[1]) / scale) + offset_y
@@ -53,10 +53,41 @@ class VisualSkillsMixin:
         return True
 
     def zoom_pan_cruise(self, keywords, **kwargs):
+        """
+        [V14.1] 暴力巡航引擎：锚点锁定 + 视觉缩放 + 物理平移。
+        """
+        # 1. 尝试锁定图片锚点并激活放大视图
+        self._log(f"正在启动暴力巡航，目标关键词: {keywords}")
+        if not self.click_landmark(keywords, offset_y=80): # 点击锚点下方进入图片区
+            self._log("未找到巡航锚点，将在当前位置执行盲巡...")
+        
+        time.sleep(0.5)
+        
+        # 2. 获取平移参数
         import random
-        scrolls = kwargs.get("scroll_amount", [2, 4])
-        count = random.randint(scrolls[0], scrolls[1])
-        for i in range(count):
-            pyautogui.scroll(120) 
-            time.sleep(0.3)
+        scroll_range = kwargs.get("scroll_amount", [3, 6])
+        pan_dx = kwargs.get("pan_dx", 60)
+        pan_dy = kwargs.get("pan_dy", 40)
+        
+        # 3. 执行巡航序列
+        steps = random.randint(scroll_range[0], scroll_range[1])
+        for i in range(steps):
+            # 随机滚轮 (缩放)
+            scroll_val = random.choice([120, -120, 240])
+            # [V17.3] 换用 Win API 滚动，彻底避开 FailSafe 崩溃
+            win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, scroll_val, 0)
+            
+            # 物理平移 (模拟拖动或视觉晃动)
+            # [V14.2] 修复：取绝对值确保随机区间合法
+            safe_dx = abs(pan_dx)
+            safe_dy = abs(pan_dy)
+            dx = random.randint(-safe_dx, safe_dx)
+            dy = random.randint(-safe_dy, safe_dy)
+            
+            # 使用驱动级相对移动
+            win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, dx, dy, 0, 0)
+            
+            time.sleep(random.uniform(0.3, 0.6))
+            
+        self._log(f"巡航完成，共执行 {steps} 组视觉偏移操作。")
         return True

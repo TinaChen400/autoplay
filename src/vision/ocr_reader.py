@@ -10,9 +10,15 @@ class OCRReader:
     """
     def __init__(self, languages=['ch_sim', 'en']):
         # 自动检测 CUDA
+        import torch
         self.use_gpu = torch.cuda.is_available()
-        print(f"--- OCR 引擎初始化 (GPU 加速: {self.use_gpu}) ---")
+        if self.use_gpu:
+            print(f"--- OCR 引擎初始化 (发现 GPU: {torch.cuda.get_device_name(0)}) ---")
+        else:
+            print(f"--- OCR 引擎初始化 (警告: 正在使用 CPU) ---")
+            
         # 首次初始化会下载模型，后续直接加载
+        # [V27.1] 设置 gpu=True 确保 EasyOCR 使用 CUDA
         self.reader = easyocr.Reader(languages, gpu=self.use_gpu)
 
     def read_screen(self, image_np: np.ndarray) -> str:

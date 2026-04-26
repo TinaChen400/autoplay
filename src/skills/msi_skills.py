@@ -41,6 +41,11 @@ class MSISkills(InputSkillsMixin, VisualSkillsMixin, AISkillsMixin, TextSkillsMi
         self.vm = ViewportManager()
         
         self.oracle = GPTOracle(bridge=self.bridge)
+        # [V7.96] 核心补丁：同步全局 Oracle 实例，防止 Step 17 和 Step 18 之间上下文丢失
+        from src.skills.implementations.atomic_skills import get_oracle
+        shared = get_oracle()
+        shared.bridge = self.bridge
+        
         self.expert = RecognitionExpert(vision_capture=self.vc)
         self.hw = HardwareManager()
         

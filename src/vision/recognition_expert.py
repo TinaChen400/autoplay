@@ -18,15 +18,18 @@ class RecognitionExpert:
     def _get_paddleocr(self):
         if self._paddle is None:
             try:
+                # [V7.64] 极简初始化，强制使用 GPU 并启用 MKLDNN 加速
                 from paddleocr import PaddleOCR
-                # [V7.64] 极简初始化，移除 show_log 以兼容所有版本
-                self._paddle = PaddleOCR(use_angle_cls=True, lang='ch')
+                import torch
+                use_gpu = torch.cuda.is_available()
+                self._paddle = PaddleOCR(use_angle_cls=True, lang='ch', use_gpu=use_gpu, enable_mkldnn=not use_gpu)
+                print(f"[EXPERT] PaddleOCR 已挂载 (GPU: {use_gpu})")
             except Exception as e:
                 print(f"[EXPERT] PaddleOCR Init Failed: {e}. Falling back to standard engine.")
                 return None
         return self._paddle
 
-    def find_landmark(self, img_np: np.ndarray, keywords: List[str], engines: List[str] = ["paddleocr", "easyocr"]) -> Optional[Tuple[int, int]]:
+    def find_landmark(self, img_np: np.ndarray, keywords: List[str], engines: List[str] = ["easyocr", "paddleocr"]) -> Optional[Tuple[int, int]]:
         """
         [V7.65] 异常隔离识别：确保任何引擎报错都不会导致主任务崩溃
         """

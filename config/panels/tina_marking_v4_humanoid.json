@@ -1,137 +1,52 @@
 {
-  "name": "AI 全自动双图研判 (V4 Humanoid)",
+  "name": "AI 全自动双图研判 (V4 Humanoid - 智能闭环版)",
   "category": "ai",
   "steps": [
     {
-      "id": 12,
-      "name": "8. 模拟真人预读",
-      "skill": "human_idle_move",
-      "params": {
-        "duration": 3.5,
-        "steps": 40
-      }
-    },
-    {
-      "id": 13,
-      "name": "9. 清空 AI 队列",
-      "skill": "ai_clear"
-    },
-    {
-      "id": 14,
-      "name": "10. 滚回顶部",
-      "skill": "scroll_up",
-      "params": {
-        "times": 5
-      }
-    },
-    {
-      "id": 15,
-      "name": "11. 抓取顶部快照",
-      "skill": "ai_snap"
-    },
-    {
-      "id": 16,
-      "name": "12. 滑到底部",
-      "skill": "scroll_down",
-      "params": {
-        "times": 5
-      }
-    },
-    {
-      "id": 17,
-      "name": "13. 抓取底部快照",
-      "skill": "ai_snap"
-    },
-    {
-      "id": 18,
-      "name": "14. 模拟检查思考",
-      "skill": "human_idle_move",
-      "params": {
-        "duration": 4.5,
-        "steps": 30
-      }
-    },
-    {
-      "id": 19,
-      "name": "15. 切换并投喂给 AI",
-      "skill": "ai_analyze",
-      "params": {
-        "prompt": "这是图片评分任务截图, 包含指令要求input/原图， 文字要求和Response A/B两张对比图。\n\n请按以下评分维度,直接输出：文字要求翻译成非常简短的中文描述，维度名: [Response A / Response B / Both Good / Both Bad]。\n\n注意: 不要多余理由,只给选项。维度包括:\n1. Overall Preference\n2. Instruction Following\n3. ID Preservation\n4. Content Preservation\n5. Visual Quality\n6. Less AI Generated, 最后输出一个最佳答案选的原因， 100字节的英文， 不要标点符号。"
-      }
-    },
-    {
-      "id": 2,
-      "name": "2.强力上滚补位",
-      "skill": "human_scroll",
-      "action": "human_scroll",
-      "params": {
-        "distance": -800,
-        "steps": 3,
-        "auto_focus": true
-      }
+      "id": 1,
+      "name": "1. 初始重置 (Home)",
+      "skill": "press_keys",
+      "params": { "keys": ["home"], "interval": 1.0 }
     },
     {
       "id": 2,
       "name": "2.1 碎步下滚 (拟人)",
       "skill": "human_scroll",
-      "action": "human_scroll",
-      "params": {
-        "distance": 450,
-        "steps": 5,
-        "auto_focus": true
-      }
-    },
-    {
-      "id": 17,
-      "name": "13. 抓取底部快照",
-      "skill": "ai_snap"
+      "params": { "distance": 450, "steps": 5, "auto_focus": false }
     },
     {
       "id": 3,
       "name": "2.2 拟人化阅读漫游",
       "skill": "human_idle_move",
-      "action": "human_idle_move",
-      "params": {
-        "duration": 3.5,
-        "steps": 25
-      }
+      "params": { "duration": 3.5, "steps": 25 }
+    },
+    {
+      "id": 4,
+      "name": "2.3 多重回滚 (Home)",
+      "skill": "press_keys",
+      "params": { "keys": ["home", "home"], "interval": 0.3 }
     },
     {
       "id": 5,
       "name": "2.4 强力上滚补位",
       "skill": "human_scroll",
-      "action": "human_scroll",
-      "params": {
-        "distance": -10000,
-        "steps": 8,
-        "auto_focus": true
-      }
+      "params": { "distance": -800, "steps": 5, "auto_focus": false }
     },
     {
       "id": 6,
       "name": "3. 点击内容区 (唤醒)",
       "skill": "click_landmark",
-      "action": "click_landmark",
       "params": {
-        "keywords": [
-          "Inputs",
-          "Input",
-          "Inpuis"
-        ],
-        "offset_y": 80
+        "keywords": ["Inputs", "Input", "Inpuis"],
+        "offset_y": 120
       }
     },
     {
       "id": 7,
       "name": "4. 内部视图切换 (随机节奏)",
       "skill": "press_keys",
-      "action": "press_keys",
       "params": {
-        "keys": [
-          "down",
-          "right",
-          "left"
-        ],
+        "keys": ["down", "right", "left"],
         "interval": 1.2
       }
     },
@@ -139,35 +54,19 @@
       "id": 8,
       "name": "5. 暴力巡航 Response A",
       "skill": "zoom_pan_cruise",
-      "action": "zoom_pan_cruise",
       "params": {
-        "keywords": [
-          "Response A",
-          "Response"
-        ],
-        "scroll_amount": [
-          3,
-          5
-        ],
-        "pan_dx": [
-          -120,
-          -40
-        ],
-        "pan_dy": [
-          40,
-          120
-        ]
+        "keywords": ["Response A", "Response"],
+        "scroll_amount": [4, 9],
+        "pan_dx": 80,
+        "pan_dy": 60
       }
     },
     {
       "id": 9,
       "name": "6. 内部视图切换 (至 B)",
       "skill": "press_keys",
-      "action": "press_keys",
-      "params": {
-        "keys": [
-          "right"
-        ],
+      "params": { 
+        "keys": ["right"],
         "interval": 1.0
       }
     },
@@ -175,92 +74,155 @@
       "id": 10,
       "name": "7. 暴力巡航 Response B",
       "skill": "zoom_pan_cruise",
-      "action": "zoom_pan_cruise",
       "params": {
-        "keywords": [
-          "Response B",
-          "Response"
-        ],
-        "scroll_amount": [
-          2,
-          6
-        ],
-        "pan_dx": [
-          -150,
-          -50
-        ],
-        "pan_dy": [
-          40,
-          120
-        ]
+        "keywords": ["Response B", "Response"],
+        "scroll_amount": [3, 8],
+        "pan_dx": -100,
+        "pan_dy": 60
       }
     },
     {
       "id": 11,
-      "name": "7.1 退出放大视图 (Esc)",
+      "name": "8. 强制对焦并退出巡航 (Esc)",
       "skill": "press_keys",
-      "action": "press_keys",
-      "params": {
-        "keys": [
-          "esc"
-        ],
-        "critical": true,
-        "interval": 1.0
-      }
-    },
-    {
-      "id": 13,
-      "name": "9. 开启 Response A 详情",
-      "skill": "click_landmark_radar",
-      "params": {
-        "keywords": [
-          "Response"
-        ],
-        "offset_x": 325,
-        "offset_y": 80
-      }
-    },
-    {
-      "id": 12.1,
-      "name": "12.1 强力上滚补位",
-      "skill": "human_scroll",
-      "action": "human_scroll",
-      "params": {
-        "distance": -5000,
-        "steps": 8,
+      "params": { 
+        "keys": ["esc"], 
         "auto_focus": true
       }
     },
     {
-      "id": 15,
-      "name": "10. 暴力巡航 A/B",
-      "skill": "press_keys",
-      "params": {
-        "keys": [
-          "right",
-          "left",
-          "left",
-          "right"
-        ],
-        "interval": 1.5
-      }
+      "id": 12,
+      "name": "9. AI 采样：清空队列",
+      "skill": "ai_clear"
+    },
+    {
+      "id": 13,
+      "name": "10. AI 采样：抓取顶部",
+      "skill": "ai_snap"
+    },
+    {
+      "id": 14,
+      "name": "11. AI 采样：滑到底部并抓取",
+      "skill": "scroll_down",
+      "params": { "times": 5 }
     },
     {
       "id": 15,
-      "name": "11. 退出详情 (Esc)",
-      "skill": "press_keys",
-      "params": {
-        "keys": [
-          "esc"
-        ]
-      }
+      "name": "11.1 抓取底部快照",
+      "skill": "ai_snap"
     },
     {
       "id": 16,
-      "name": "12. 滑到底部",
-      "skill": "scroll_down",
+      "name": "12. 提交 AI 进行深度研判",
+      "skill": "ai_analyze",
       "params": {
-        "times": 5
+        "prompt": "这是图片评分任务截图, 包含指令要求input/原图， 文字要求和Response A/B两张对比图。\n\n请按以下评分维度,直接输出：文字要求翻译成非常简短的中文描述，维度名: [Response A / Response B / Both Good / Both Bad]。\n\n注意: 不要多余理由,只给选项。维度包括:\n1. Overall Preference\n2. Instruction Following\n3. ID Preservation\n4. Content Preservation\n5. Visual Quality\n6. Less AI Generated, 最后输出一个最佳答案选的原因， 100字节的英文， 不要标点符号。"
+      }
+    },
+    {
+      "id": 17,
+      "name": "13. 等待 AI 响应完成",
+      "skill": "wait_for_ai_idle",
+      "params": { "timeout": 60 }
+    },
+    {
+      "id": 18,
+      "name": "14. 精准提取 AI 决策",
+      "skill": "extract_ai_clipboard"
+    },
+    {
+      "id": 19,
+      "name": "15. 决策语义解析",
+      "skill": "parse_scoring_logic"
+    },
+    {
+      "id": 19.1,
+      "name": "15.1 填表前置：一键滚到底部",
+      "skill": "scroll_home_end",
+      "params": { 
+        "direction": "end",
+        "auto_focus": true
+      }
+    },
+    {
+      "id": 101,
+      "name": "16.1 填表: Overall Preference",
+      "skill": "click_row_target",
+      "params": {
+        "step_id": 101,
+        "keywords": ["Overall"],
+        "target_keyword": "{Overall}"
+      }
+    },
+    {
+      "id": 101.1,
+      "name": "16.1a 拟人停顿：视线扫视",
+      "skill": "human_idle_move",
+      "params": { "duration": 1.2, "steps": 15 }
+    },
+    {
+      "id": 102,
+      "name": "16.2 填表: Instruction Following",
+      "skill": "click_row_target",
+      "params": {
+        "step_id": 102,
+        "keywords": ["Instruction"],
+        "target_keyword": "{Instruction}"
+      }
+    },
+    {
+      "id": 102.1,
+      "name": "16.2a 拟人停顿：犹豫思考",
+      "skill": "human_idle_move",
+      "params": { "duration": 1.5, "steps": 20 }
+    },
+    {
+      "id": 103,
+      "name": "16.3 填表: ID Preservation",
+      "skill": "click_row_target",
+      "params": {
+        "step_id": 103,
+        "keywords": ["ID Preservation"],
+        "target_keyword": "{ID}"
+      }
+    },
+    {
+      "id": 104,
+      "name": "16.4 填表: Content Preservation",
+      "skill": "click_row_target",
+      "params": {
+        "step_id": 104,
+        "keywords": ["Content"],
+        "target_keyword": "{Content}"
+      }
+    },
+    {
+      "id": 105,
+      "name": "16.5 填表: Visual Quality",
+      "skill": "click_row_target",
+      "params": {
+        "step_id": 105,
+        "keywords": ["Visual"],
+        "target_keyword": "{Visual}"
+      }
+    },
+    {
+      "id": 106,
+      "name": "16.6 填表: Less AI Generated",
+      "skill": "click_row_target",
+      "params": {
+        "step_id": 106,
+        "keywords": ["Generated", "Absence"],
+        "target_keyword": "{Generated}"
+      }
+    },
+    {
+      "id": 107,
+      "name": "17. 准备提交：一键滚到底部",
+      "skill": "scroll_home_end",
+      "params": { 
+        "direction": "end",
+        "auto_focus": true
       }
     }
   ]

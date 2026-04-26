@@ -29,6 +29,7 @@ class TaskBridge:
         
         self.skills = MSISkills(bridge=self)
         self.steps: List[TaskStep] = []
+        self.context: Dict = {} # [V7.60] 核心内存：用于存储跨步骤的决策数据 (如 AI 解析结果)
         self.is_recording = False
         self.on_step_added_cb = None 
         self.on_visual_feedback_cb = None 
@@ -177,8 +178,11 @@ class TaskBridge:
                             break
                             
                         method = getattr(self.skills, step.methodName)
+                        # [V7.62] 动态占位符解析：将 params 中的 {Variable} 替换为 context 中的真实数据
+                        resolved_params = self._resolve_placeholders(step.params)
+                        
                         # 尝试调用并捕获结果
-                        result = method(**step.params)
+                        result = method(**resolved_params)
                         
                         if result is False:
                             self._log(f"[MISSION] 警告: 步骤 {step.name} 返回失败。")
@@ -211,6 +215,28 @@ class TaskBridge:
                 self._log("=" * 40)
 
         threading.Thread(target=_chain_executor, daemon=True).start()
+
+    def _resolve_placeholders(self, params: dict) -> dict:
+        """[V7.65] 递归解析参数字典中的占位符 {key}"""
+        if not params: return {}
+        import re
+        resolved = {}
+        for k, v in params.items():
+            if isinstance(v, str):
+                # 寻找 {key} 模式
+                matches = re.findall(r"\{(.*?)\}", v)
+                new_v = v
+                for m in matches:
+                    if m in self.context:
+                        val = str(self.context[m])
+                        new_v = new_v.replace(f"{{{m}}}", val)
+                        self._log(f"[CONTEXT] 占位符转换: {{{m}}} -> {val}")
+                resolved[k] = new_v
+            elif isinstance(v, dict):
+                resolved[k] = self._resolve_placeholders(v)
+            else:
+                resolved[k] = v
+        return resolved
 
     def delete_step(self, index: int):
         if 0 <= index < len(self.steps):

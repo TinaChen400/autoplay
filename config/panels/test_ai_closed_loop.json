@@ -1,0 +1,166 @@
+{
+  "name": "【专项测试】AI 决策闭环与动态点击",
+  "category": "test",
+  "steps": [
+    {
+      "id": 12,
+      "name": "8. 模拟真人预读",
+      "skill": "human_idle_move",
+      "params": {
+        "duration": 3.5,
+        "steps": 40
+      }
+    },
+    {
+      "id": 13,
+      "name": "9. 清空 AI 队列",
+      "skill": "ai_clear"
+    },
+    {
+      "id": 14,
+      "name": "10. 滚回顶部",
+      "skill": "scroll_up",
+      "params": {
+        "times": 5
+      }
+    },
+    {
+      "id": 15,
+      "name": "11. 抓取顶部快照",
+      "skill": "ai_snap"
+    },
+    {
+      "id": 16,
+      "name": "12. 滑到底部",
+      "skill": "scroll_down",
+      "params": {
+        "times": 5
+      }
+    },
+    {
+      "id": 17,
+      "name": "13. 抓取底部快照",
+      "skill": "ai_snap"
+    },
+    {
+      "id": 18,
+      "name": "14. 模拟检查思考",
+      "skill": "human_idle_move",
+      "params": {
+        "duration": 4.5,
+        "steps": 30
+      }
+    },
+    {
+      "id": 19,
+      "name": "15. 切换并投喂给 AI",
+      "skill": "ai_analyze",
+      "params": {
+        "prompt": "这是图片评分任务截图, 包含指令要求input/原图， 文字要求和Response A/B两张对比图。\n\n请按以下评分维度,直接输出：文字要求翻译成非常简短的中文描述，维度名: [Response A / Response B / Both Good / Both Bad]。\n\n注意: 不要多余理由,只给选项。维度包括:\n1. Overall Preference\n2. Instruction Following\n3. ID Preservation\n4. Content Preservation\n5. Visual Quality\n6. Less AI Generated, 最后输出一个最佳答案选的原因， 100字节的英文， 不要标点符号。"
+      }
+    },
+    {
+      "id": 20,
+      "name": "16. 等待 AI 响应完成",
+      "skill": "wait_for_ai_idle",
+      "params": {
+        "timeout": 60
+      }
+    },
+    {
+      "id": 21,
+      "name": "17. 精准抓取 AI 决策",
+      "skill": "extract_ai_clipboard",
+      "params": {}
+    },
+    {
+      "id": 22,
+      "name": "18. 决策语义解析",
+      "skill": "parse_scoring_logic",
+      "params": {}
+    },
+    {
+      "id": 101,
+      "name": "验证点击 1: Overall",
+      "skill": "click_row_target",
+      "params": {
+        "step_id": 101,
+        "keywords": ["Overall"],
+        "target_keyword": "{Overall}",
+        "offset_y": 0
+      }
+    },
+    {
+      "id": 105,
+      "name": "验证点击 2: Visual",
+      "skill": "click_row_target",
+      "params": {
+        "step_id": 105,
+        "keywords": ["Visual"],
+        "target_keyword": "{Visual}",
+        "offset_y": 0
+      }
+    },
+    {
+      "id": 102,
+      "name": "验证点击 3: Instruction",
+      "skill": "click_row_target",
+      "params": {
+        "step_id": 102,
+        "keywords": ["Instruction"],
+        "target_keyword": "{Instruction}",
+        "offset_y": 0
+      }
+    },
+    {
+      "id": 103,
+      "name": "验证点击 4: ID",
+      "skill": "click_row_target",
+      "params": {
+        "step_id": 103,
+        "keywords": ["ID Preservation"],
+        "target_keyword": "{ID}",
+        "offset_y": 0
+      }
+    },
+    {
+      "id": 104,
+      "name": "验证点击 5: Content",
+      "skill": "click_row_target",
+      "params": {
+        "step_id": 104,
+        "keywords": ["Content"],
+        "target_keyword": "{Content}",
+        "offset_y": 0
+      }
+    },
+    {
+      "id": 108,
+      "name": "验证点击 6: Generated",
+      "skill": "click_row_target",
+      "params": {
+        "step_id": 108,
+        "keywords": ["Generated"],
+        "target_keyword": "{Generated}",
+        "offset_y": 0
+      }
+    },
+    {
+      "id": 106,
+      "name": "19. 准备提交：滚动到底部",
+      "skill": "scroll_down",
+      "params": {
+        "times": 3
+      }
+    },
+    {
+      "id": 107,
+      "name": "验证点击 3: Submit",
+      "skill": "click_landmark",
+      "params": {
+        "keywords": ["Submit", "Vote", "提交", "投票"],
+        "optional": true
+      }
+    }
+  ]
+}

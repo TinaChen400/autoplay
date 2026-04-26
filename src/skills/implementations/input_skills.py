@@ -44,9 +44,41 @@ def human_scroll(vm: ViewportManager, distance=400, steps=5, auto_focus=False, *
 
 @skill_handler("scroll_home_end")
 def scroll_home_end(vm: ViewportManager, direction="end", auto_focus=False, **kwargs):
-    ensure_focus(vm, enabled=auto_focus)
+    # [V10.5] 暴力触底：中心激活 + 多重按键 + 物理滚轮
+    if auto_focus:
+        rect = vm.dock_rect
+        if rect:
+            # 点中心，确保主容器获取焦点
+            cx, cy = int(rect["x"] + rect["width"]/2), int(rect["y"] + rect["height"]/2)
+            win32api.SetCursorPos((cx, cy))
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+            time.sleep(0.05)
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+            time.sleep(0.3)
+            
     key = "end" if direction == "end" else "home"
-    pydirectinput.press(key)
+    logger.info(f"Executing BRUTE FORCE scroll: {key}")
+    
+    # 1. 组合拳：Ctrl + End (强制跳转文档最末尾)
+    if direction == "end":
+        win32api.keybd_event(win32con.VK_CONTROL, 0, 0, 0)
+        pydirectinput.press("end")
+        time.sleep(0.1)
+        win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_KEYUP, 0)
+    else:
+        pydirectinput.press("home")
+    
+    time.sleep(0.3)
+    
+    # 2. 超级补位：20 次 PageDown 连击
+    if direction == "end":
+        for _ in range(20):
+            pydirectinput.press("pagedown")
+            time.sleep(0.05)
+        # 3. 飓风级滚轮：-20000 像素
+        win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, -20000, 0)
+        
+    time.sleep(0.5)
     return True
 
 class InputSkillsMixin:
