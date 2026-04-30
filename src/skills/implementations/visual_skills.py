@@ -3,21 +3,23 @@ import win32api
 import win32con
 import pyautogui
 import os
+import random
+import math
 from src.skills.humanize import smooth_move
 
 class VisualSkillsMixin:
     """
-    [V14.0] 极简快准版：去冗余、快响应、深穿透。
+    [V18.6] Visual Skills Engine: Supports multi-anchor alignment and A/B splitting.
     """
     
     def click_landmark(self, keywords, offset_x=0, offset_y=0, **kwargs):
         """
-        极简视觉点击：识别后瞬间打击。
+        [V18.6] Humanoid visual click with A/B side detection logic.
         """
         import cv2
         import numpy as np
         
-        # 1. 获取物理原点与快照
+        # 1. Get window rect
         rect = self.wm.get_window_rect()
         win_px, win_py = rect['left'], rect['top']
         
@@ -28,66 +30,148 @@ class VisualSkillsMixin:
         
         found_pos = None
         if frame_np is not None:
-            for kw in keywords:
-                found_pos = ocr.find_largest_element(frame_np, kw)
-                if found_pos: break
+            # Global scan for all matches containing 'Response'
+            all_matches = []
+            detailed_results = ocr.get_detailed_results(frame_np)
+            
+            for (bbox, text, prob) in detailed_results:
+                clean_t = text.lower().replace(" ", "")
+                # Check if any provided keyword (lowered and stripped) is in the detected text
+                match_found = False
+                for kw in keywords:
+                    if kw.lower().replace(" ", "") in clean_t:
+                        match_found = True
+                        break
+                
+                if match_found:
+                    cx = int(np.mean([p[0] for p in bbox]))
+                    cy = int(np.mean([p[1] for p in bbox]))
+                    all_matches.append({"x": cx, "y": cy, "text": text})
+            
+            # Sort by X coordinate (Left to Right)
+            all_matches = sorted(all_matches, key=lambda m: m["x"])
+            
+            # Intelligent splitting for A vs B
+            target_is_b = any("b" in k.lower() for k in keywords)
+            
+            if len(all_matches) >= 2:
+                if target_is_b:
+                    # Target B: Pick the rightmost one
+                    found_pos = (all_matches[-1]["x"], all_matches[-1]["y"])
+                    self._log(f"Visual Split: Locked Right Anchor (Response B) at {found_pos}")
+                else:
+                    # Target A: Pick the leftmost one
+                    found_pos = (all_matches[0]["x"], all_matches[0]["y"])
+                    self._log(f"Visual Split: Locked Left Anchor (Response A) at {found_pos}")
+            elif len(all_matches) == 1:
+                # Only one found, use it regardless but log correctly
+                found_pos = (all_matches[0]["x"], all_matches[0]["y"])
+                tag = "Response B" if target_is_b else "Response A"
+                self._log(f"Visual Split: Single Anchor found, assuming {tag} at {found_pos}")
         
         if not found_pos:
             return False
 
-        # 获取逻辑分辨率和物理分辨率的比例
-        logi_w = win32api.GetSystemMetrics(win32con.SM_CXSCREEN)
-        phys_w = win32api.GetSystemMetrics(win32con.SM_CXSCREEN) # 这里通常是一致的，或者通过 GetSystemMetrics 获取
-        scale = 1.0 # 巡航内部采用逻辑坐标
+        scale = 1.0 
         
-        target_x = int((win_px + found_pos[0]) / scale) + offset_x
-        target_y = int((win_py + found_pos[1]) / scale) + offset_y
+        # Humanoid jitter and physical coordinate calculation
+        target_x = int((win_px + found_pos[0]) / scale) + offset_x + random.randint(-5, 5)
+        target_y = int((win_py + found_pos[1]) / scale) + offset_y + random.randint(-5, 5)
         
-        # 3. 瞬间执行 (驱动级)
-        win32api.SetCursorPos((target_x, target_y))
+        # Safety boundary lock
+        target_x = max(win_px + 20, min(target_x, win_px + rect['width'] - 20))
+        target_y = max(win_py + 20, min(target_y, win_py + rect['height'] - 20))
+        
+        # Humanoid execution (Move + Pause + Click)
+        smooth_move(target_x, target_y, duration=0.5)
+        time.sleep(0.1)
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
         time.sleep(0.1)
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
         
-        self._log(f"[HIT] 已点击锚点下方 {offset_y}px: ({target_x}, {target_y})")
         return True
 
     def zoom_pan_cruise(self, keywords, **kwargs):
         """
-        [V14.1] 暴力巡航引擎：锚点锁定 + 视觉缩放 + 物理平移。
+        [V18.6] High-intensity humanoid cruise with A/B discrimination.
         """
-        # 1. 尝试锁定图片锚点并激活放大视图
-        self._log(f"正在启动暴力巡航，目标关键词: {keywords}")
-        if not self.click_landmark(keywords, offset_y=80): # 点击锚点下方进入图片区
-            self._log("未找到巡航锚点，将在当前位置执行盲巡...")
+        self._log(f"Starting V18.6 Smart Cruise for: {keywords}")
+        if not self.click_landmark(keywords, offset_y=150): 
+            self._log("Cruise anchor not found. Skipping to avoid drift.")
+            return False 
         
-        time.sleep(0.5)
+        time.sleep(0.8) 
         
-        # 2. 获取平移参数
-        import random
-        scroll_range = kwargs.get("scroll_amount", [3, 6])
-        pan_dx = kwargs.get("pan_dx", 60)
-        pan_dy = kwargs.get("pan_dy", 40)
+        start_x, start_y = win32api.GetCursorPos()
+        self._log(f"Cruise Start Location: ({start_x}, {start_y})")
         
-        # 3. 执行巡航序列
+        # Parameters
+        scroll_range = kwargs.get("scroll_amount", [8, 15])
+        
+        # 允许 JSON 传入范围，比如 [30, 80] 或 "30-80"
+        def _parse_pan(val, default):
+            if val is None: return default
+            if isinstance(val, list) and len(val) == 2: return random.randint(int(val[0]), int(val[1]))
+            if isinstance(val, str) and "-" in val:
+                p = val.split("-")
+                return random.randint(int(p[0]), int(p[1]))
+            return int(val)
+            
+        pan_dx = _parse_pan(kwargs.get("pan_dx"), 60)
+        pan_dy = _parse_pan(kwargs.get("pan_dy"), 40)
+        
+        rect = self.wm.get_window_rect()
         steps = random.randint(scroll_range[0], scroll_range[1])
+        self._log(f"Executing {steps} cruise cycles (Zoom + Smooth Pan)...")
+        
+        current_zoom = 0
         for i in range(steps):
-            # 随机滚轮 (缩放)
-            scroll_val = random.choice([120, -120, 240])
-            # [V17.3] 换用 Win API 滚动，彻底避开 FailSafe 崩溃
-            win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, scroll_val, 0)
+            # 1. Randomized Zoom Strategy
+            # Decision: Zoom In, Zoom Out, or Stay?
+            zoom_choice = random.random()
+            if zoom_choice < 0.4: # Zoom In
+                scroll_val = 120 * random.randint(1, 3)
+                current_zoom += 1
+            elif zoom_choice < 0.7: # Zoom Out
+                scroll_val = -120 * random.randint(1, 2)
+                current_zoom -= 1
+            else: # Jitter Zoom
+                scroll_val = random.choice([120, -120])
             
-            # 物理平移 (模拟拖动或视觉晃动)
-            # [V14.2] 修复：取绝对值确保随机区间合法
-            safe_dx = abs(pan_dx)
-            safe_dy = abs(pan_dy)
-            dx = random.randint(-safe_dx, safe_dx)
-            dy = random.randint(-safe_dy, safe_dy)
+            # Execute multiple wheel events for more 'drama' if choosing to zoom
+            repeat_zoom = random.randint(1, 2) if abs(scroll_val) > 120 else 1
+            for _ in range(repeat_zoom):
+                win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, scroll_val, 0)
+                time.sleep(0.1)
             
-            # 使用驱动级相对移动
-            win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, dx, dy, 0, 0)
+            time.sleep(0.4) 
             
-            time.sleep(random.uniform(0.3, 0.6))
+            # 2. Dynamic Panning based on Zoom level
+            # If we are "zoomed in", pan more aggressively to look around
+            pan_multiplier = 1.5 if current_zoom > 0 else 1.0
             
-        self._log(f"巡航完成，共执行 {steps} 组视觉偏移操作。")
+            angle = (i / steps) * 2 * math.pi
+            osc_x = int(math.cos(angle) * 50 * pan_multiplier) 
+            osc_y = int(math.sin(angle) * 35 * pan_multiplier)
+            
+            # Base target with increased random 'exploration' jitter
+            target_x = start_x + pan_dx + osc_x + random.randint(-20, 20)
+            target_y = start_y + pan_dy + osc_y + random.randint(-20, 20)
+            
+            # Stay within image area
+            target_x = max(rect['left'] + 80, min(target_x, rect['left'] + rect['width'] - 80))
+            target_y = max(rect['top'] + 80, min(target_y, rect['top'] + rect['height'] - 80))
+            
+            self._log(f"Cruise Step {i+1}/{steps}: Zoom({current_zoom}) Moving to ({target_x}, {target_y})")
+            
+            # 3. Simulated Reading/Observation Pause
+            # If zoomed in, occasionally pause longer to "look"
+            move_duration = random.uniform(0.4, 0.8)
+            smooth_move(target_x, target_y, duration=move_duration)
+            
+            pause_time = random.uniform(0.6, 1.2)
+            if current_zoom > 1: pause_time += 1.0 # Look longer when zoomed in
+            time.sleep(pause_time)
+            
+        self._log(f"V18.6 Cruise completed successfully.")
         return True

@@ -62,8 +62,10 @@ def extract_ai_clipboard(vm: ViewportManager, **kwargs):
     _log("正在执行精准决策抓取...")
     
     oracle = get_oracle()
-    oracle.action_focus_gpt_window()
-    time.sleep(0.8)
+    if not oracle.action_focus_gpt_window():
+        _log("致命错误：无法定位到 AI 窗口（如 豆包/ChatGPT/浏览器），操作中止以防误触编辑器。")
+        return False
+    time.sleep(1.0)
     
     try:
         win32clipboard.OpenClipboard()
@@ -71,53 +73,69 @@ def extract_ai_clipboard(vm: ViewportManager, **kwargs):
         win32clipboard.CloseClipboard()
     except: pass
     
-    # [V7.97] 强制聚焦：在按 Ctrl+A 之前，先在窗口中心点一下，确保焦点在网页内容区
-    cx, cy = win32api.GetSystemMetrics(win32con.SM_CXSCREEN) // 2, win32api.GetSystemMetrics(win32con.SM_CYSCREEN) // 2
+    # [V29.0 KVM安全版] 置顶豆包窗口后静默等待焦点，不做任何额外点击防止误触
+    try:
+        if hasattr(oracle, 'last_hwnd') and oracle.last_hwnd:
+            import win32gui
+            win32gui.SetForegroundWindow(oracle.last_hwnd)
+            _log(f"已静默置顶豆包窗口 (HWND: {oracle.last_hwnd})，等待焦点稳定...")
+    except Exception as e:
+        _log(f"置顶豆包窗口失败: {e}")
+    
+    time.sleep(0.8)
+
+    # [V30.0 KVM安全版] 跳过全屏OCR按钮搜索（容易误识别远程Tina窗口），直接 Ctrl+A + Ctrl+C
+    # 窗口身份校验：确保焦点在浏览器上再执行
+    try:
+        import win32gui
+        import win32process
+        import psutil
+        
+        hwnd = win32gui.GetForegroundWindow()
+        _, pid = win32process.GetWindowThreadProcessId(hwnd)
+        proc_name = psutil.Process(pid).name().lower()
+        
+        if all(k not in proc_name for k in ["chrome", "edge", "browser", "doubao"]):
+            _log(f"警告：当前焦点在 {proc_name}，非 AI 窗口！尝试重新强拉...")
+            if hasattr(oracle, 'last_hwnd') and oracle.last_hwnd:
+                win32gui.ShowWindow(oracle.last_hwnd, 5)
+                win32gui.SetForegroundWindow(oracle.last_hwnd)
+                time.sleep(1.0)
+            else:
+                _log("致命错误：找不到浏览器句柄，放弃抓取防止污染编辑器。")
+                return False
+        else:
+            _log(f"窗口身份校验通过: {proc_name}，准备执行全选复制...")
+    except Exception as e:
+        _log(f"窗口身份校验异常: {e}")
+
+    # [V30.1] 点击豆包内容区中心，确保页面焦点（非按钮区），再执行 Ctrl+A+C
     try:
         if hasattr(oracle, 'last_hwnd') and oracle.last_hwnd:
             import win32gui
             w_rect = win32gui.GetWindowRect(oracle.last_hwnd)
-            cx = (w_rect[0] + w_rect[2]) // 2
-            cy = (w_rect[1] + w_rect[3]) // 2
-    except: pass
-    
-    # 模拟点击中心以激活网页焦点
-    win32api.SetCursorPos((cx, cy))
-    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-    time.sleep(0.05)
-    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-    time.sleep(0.5)
+            # 点击窗口正中心，安全区，远离顶部导航栏和底部输入框
+            center_x = (w_rect[0] + w_rect[2]) // 2
+            center_y = w_rect[1] + int((w_rect[3] - w_rect[1]) * 0.6)  # 偏下60%，在AI回复区
+            win32api.SetCursorPos((center_x, center_y))
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+            time.sleep(0.05)
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+            _log(f"已点击豆包内容区中心激活页面焦点: ({center_x}, {center_y})")
+            time.sleep(0.3)
+    except Exception as e:
+        _log(f"点击豆包内容区失败: {e}")
 
-    res = None
-    from src.vision.recognition_expert import RecognitionExpert
-    from src.vision.capture import VisionCapture
-    vc = VisionCapture()
-    expert = RecognitionExpert(vision_capture=vc)
-    
-    # 抓取当前屏幕寻找复制按钮
-    img_path = vc.capture_screen()
-    img_np = cv2.imread(img_path)
-    if img_np is not None:
-        res = expert.find_landmark(img_np, ["Copy", "复制", "Done", "Share"])
-        
-    if res:
-        _log(f"找到交互按钮 at {res}, 正在执行点击...")
-        win32api.SetCursorPos((int(res[0]), int(res[1])))
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-        time.sleep(0.1)
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-        time.sleep(1.0) 
-    else:
-        _log("未找到显式按钮，执行强制 Ctrl+A + Ctrl+C...")
-        win32api.keybd_event(win32con.VK_CONTROL, 0, 0, 0)
-        win32api.keybd_event(ord('A'), 0, 0, 0)
-        time.sleep(0.2)
-        win32api.keybd_event(ord('A'), 0, win32con.KEYEVENTF_KEYUP, 0)
-        win32api.keybd_event(ord('C'), 0, 0, 0)
-        time.sleep(0.2)
-        win32api.keybd_event(ord('C'), 0, win32con.KEYEVENTF_KEYUP, 0)
-        win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_KEYUP, 0)
-        time.sleep(1.5)
+    _log("执行强制 Ctrl+A + Ctrl+C 全选复制...")
+    win32api.keybd_event(win32con.VK_CONTROL, 0, 0, 0)
+    win32api.keybd_event(ord('A'), 0, 0, 0)
+    time.sleep(0.2)
+    win32api.keybd_event(ord('A'), 0, win32con.KEYEVENTF_KEYUP, 0)
+    win32api.keybd_event(ord('C'), 0, 0, 0)
+    time.sleep(0.2)
+    win32api.keybd_event(ord('C'), 0, win32con.KEYEVENTF_KEYUP, 0)
+    win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_KEYUP, 0)
+    time.sleep(1.5)
 
     try:
         win32clipboard.OpenClipboard()
@@ -180,7 +198,7 @@ def parse_scoring_logic(vm: ViewportManager, **kwargs):
             # [V19.1] 决策对齐优化：
             # 1. 去掉 re.DOTALL，防止跨行勾搭“理由”里的文字
             # 2. 允许关键词前有序号或 Markdown 符号
-            pattern = rf"(?:\d+[\.\s、]+)?(?:\*\*|__)?{kw}(?:\*\*|__)?.*?[:：\s]+.*?(Response A|Response B|Both Good|Both Bad|\bA\b|\bB\b)"
+            pattern = rf"(?:\d+[\.\s、]+)?(?:\*\*|__)?{kw}(?:\*\*|__)?.*?[:：\s]+.*?(Response A|Response B|Both Good|Both Bad|N/A|\bA\b|\bB\b)"
             
             # 使用 finditer 找到所有匹配，并取【最后一个】，确保是最新的一条回复
             matches = list(re.finditer(pattern, text, re.IGNORECASE))

@@ -5,7 +5,15 @@ import os
 from ctypes import wintypes
 from typing import Optional, Dict
 
-# [回归稳定] 移除强制物理像素感知，允许回归系统默认的逻辑缩放 (如 1.25x)
+# [V22.1] 核心像素级修复：强制物理像素感知，禁止逻辑缩放干扰
+try:
+    import ctypes
+    ctypes.windll.shcore.SetProcessDpiAwareness(2) # PROCESS_PER_MONITOR_DPI_AWARE
+except:
+    try:
+        ctypes.windll.user32.SetProcessDPIAware()
+    except:
+        pass
 
 class WindowManager:
     """
@@ -136,7 +144,7 @@ class WindowLock:
             return hwnd
         return None
 
-    def lock_and_align(self, x=10, y=10, w=1440, h=900):
+    def lock_and_align(self, x=10, y=10, w=1491, h=900):
         """强制对齐并锁定窗口位置与样式"""
         import win32con
         hwnd = self.find_window()

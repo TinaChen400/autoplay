@@ -5,7 +5,7 @@ import win32gui
 import win32con
 import win32api
 import win32clipboard
-import win32com.client
+import win32com.client  # 保留：部分旧版兼容路径可能仍用到
 import pyautogui
 import mss
 import numpy as np
@@ -44,8 +44,13 @@ class GPTOracle:
                 }
                 sct_img = sct.grab(monitor)
                 img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+                
+                # [V21.1] 增加可见性：保存一份快照供人工核对
+                snap_path = os.path.join(self.records_dir, "last_ai_snap.png")
+                img.save(snap_path)
+                
                 self.image_queue.append(img)
-                self._log(f"画面已加入队列 (当前长度: {len(self.image_queue)})")
+                self._log(f"画面已加入队列并保存快照: {snap_path} (当前长度: {len(self.image_queue)})")
                 return True
         except Exception as e:
             self._log(f"加入队列失败: {e}")
@@ -125,9 +130,6 @@ class GPTOracle:
             
             try:
                 # 暴力置顶三部曲
-                shell = win32com.client.Dispatch("WScript.Shell")
-                shell.SendKeys('%') # 破解焦点锁定
-                
                 # 尝试解除最小化并置顶
                 win32gui.ShowWindow(target_hwnd, win32con.SW_RESTORE)
                 win32gui.SetWindowPos(target_hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0, 

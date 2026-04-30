@@ -162,6 +162,15 @@ class TaskBridge:
                         self._log("[MISSION] 接收到终止信号，流程中断。")
                         break
                         
+                    while getattr(self, '_is_paused', False):
+                        time.sleep(0.5)
+                        if getattr(self, '_stop_requested', False):
+                            break
+                    
+                    if getattr(self, '_stop_requested', False):
+                        self._log("[MISSION] 接收到终止信号，流程中断。")
+                        break
+                        
                     step = self.steps[i]
                     step_info = f"第 {i+1}/{len(self.steps)} 步: {step.name}"
                     self._log(f"[MISSION] 正在执行: {step_info}")
@@ -256,6 +265,8 @@ class TaskBridge:
             self.save_mission()
 
     def reset(self):
+        self._stop_requested = False
+        self._is_paused = False
         for s in self.steps: s.status = "idle"
 
     # --- 录制与管理核心 (V6 新增) ---

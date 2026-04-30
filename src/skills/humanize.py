@@ -20,17 +20,13 @@ def ensure_focus(vm: ViewportManager, enabled=True):
     if not enabled: return
     rect = vm.dock_rect
     if rect:
-        # [V17.3] 换用原生 Win API 点击，确保全局驱动一致
+        # KVM模式下，点边缘只移动鼠标，不执行物理点击以防误触
         rx = rect["x"] + int(rect["width"] * 0.9)
         ry = rect["y"] + int(rect["height"] * 0.5)
         
         win32api.SetCursorPos((rx, ry))
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-        time.sleep(0.05)
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-        
-        time.sleep(0.5)
-        logger.info(f"[HUMAN] 稳健对焦点击 (WinAPI): ({rx}, {ry})")
+        time.sleep(0.1)
+        logger.info(f"[HUMAN] 稳健对焦平移 (KVM无感模式): ({rx}, {ry})")
 
 def smooth_move(target_x, target_y, duration=0.6, steps=25):
     """

@@ -9,9 +9,21 @@ import cv2
 import base64
 import re
 import threading
+
+# [V22.1] 核心像素级修复：强制物理像素感知，禁止逻辑缩放干扰
+try:
+    import ctypes
+    ctypes.windll.shcore.SetProcessDpiAwareness(2) # PROCESS_PER_MONITOR_DPI_AWARE
+except:
+    try:
+        import ctypes
+        ctypes.windll.user32.SetProcessDPIAware()
+    except:
+        pass
 import queue
 import time
 import random
+import keyboard
 import win32api
 import win32con
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
@@ -105,6 +117,13 @@ class AIAgentApp:
         self.task_panel.task_selected.connect(self.initiate_task)
         self.control_bar.stop_clicked.connect(self._request_stop)
         self.control_bar.quit_clicked.connect(QApplication.quit)
+        
+        # 绑定全局热键: F8停止，F9暂停 (避免与脚本自身模拟的按键冲突)
+        try:
+            keyboard.add_hotkey('f8', self._request_stop)
+            keyboard.add_hotkey('f9', self.toggle_pause)
+        except Exception as e:
+            print(f"[WARNING] 热键绑定失败: {e}")
         
         # 5. 开启实时同步计时器 (V6.8 强力吸附)
         self.sync_timer = QTimer()
@@ -286,7 +305,27 @@ class AIAgentApp:
     def _request_stop(self):
         """发起停止请求"""
         self._stop_requested = True
+        if hasattr(self, 'bridge'):
+            self.bridge._stop_requested = True
         self.log("WARNING", "正在请求终止当前工作流...")
+
+    def toggle_pause(self):
+        """切换暂停/恢复状态"""
+        if hasattr(self, 'bridge'):
+            is_paused = getattr(self.bridge, '_is_paused', False)
+            self.bridge._is_paused = not is_paused
+            status = "已暂停 (再次按空格键恢复)" if not is_paused else "已恢复运行"
+            self.log("SYSTEM", f"流程{status}")
+            
+            # 同步更新 UI 状态显示
+            if self.bridge._is_paused:
+                self.overlay.status_msg = "PAUSED | 流程已暂停"
+            else:
+                self.overlay.status_msg = "RESUMED | 流程恢复"
+            
+            try:
+                QApplication.processEvents()
+            except: pass
 
     # =========================================================
     # 核心驱动方法 (遵循 standardization_plan.md)
@@ -548,20 +587,34 @@ class AIAgentApp:
     # =========================================================
 
     def _skill_force_activate(self):
-        """[V6.9] 物理唤醒：将鼠标移至中心并执行激活点击"""
+        """[V7.08] 智能物理唤醒 (KVM无感模式)"""
         rect = self.window_manager.get_window_rect()
-        if rect:
-            cx = rect['left'] + rect['width'] // 2
-            cy = rect['top'] + rect['height'] // 2
-            self.log("DEBUG", f"正在尝试激活窗口，目标坐标: ({cx}, {cy})")
+        if not rect or 'left' not in rect: return
+        
+        # 1. 获取当前鼠标真实物理位置
+        curr_x, curr_y = win32api.GetCursorPos()
+        
+        # 2. 判断是否已经在 KVM 窗口内 (预留 20px 边缘缓冲)
+        in_x = (rect['left'] + 20) <= curr_x <= (rect['left'] + rect['width'] - 20)
+        in_y = (rect['top'] + 20) <= curr_y <= (rect['top'] + rect['height'] - 20)
+        
+        if in_x and in_y:
+            self.log("DEBUG", "鼠标已在KVM画面内，跳过唤醒保持拟人轨迹。")
+            return
             
-            # 物理移动与点击
-            win32api.SetCursorPos((cx, cy))
-            time.sleep(0.1)
-            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-            time.sleep(0.05)
-            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-            time.sleep(0.5)
+        # 3. 鼠标在画面外，计算随机拉回区间
+        import random
+        margin_x = min(150, max(50, rect['width'] // 4))
+        margin_y = min(150, max(50, rect['height'] // 4))
+        
+        cx = rect['left'] + random.randint(margin_x, rect['width'] - margin_x)
+        cy = rect['top'] + random.randint(margin_y, rect['height'] - margin_y)
+        
+        self.log("DEBUG", f"鼠标越界，正在随机拉回 KVM 区间 ({cx}, {cy})...")
+        
+        # 4. 仅平移鼠标，KVM 会自动捕获焦点
+        win32api.SetCursorPos((cx, cy))
+        time.sleep(0.3)
 
     def _skill_idle_move(self, duration):
         """模拟人类闲置晃动鼠标"""
@@ -623,19 +676,34 @@ class AIAgentApp:
         self.log("SUCCESS", "AI 分析完成，请在弹出窗口查阅详情。")
 
     def _skill_force_activate(self):
-        """[V7.07] 强制对齐并激活远程窗口"""
+        """[V7.08] 智能物理唤醒 (KVM无感模式)"""
         rect = self.window_manager.get_window_rect()
         if not rect or 'left' not in rect: return
         
-        cx = rect['left'] + rect['width'] // 2
-        cy = rect['top'] + rect['height'] // 2
-        self.log("DEBUG", f"正在物理对位并点击激活 ({cx}, {cy})...")
+        # 1. 获取当前鼠标真实物理位置
+        curr_x, curr_y = win32api.GetCursorPos()
         
+        # 2. 判断是否已经在 KVM 窗口内 (预留 20px 边缘缓冲)
+        in_x = (rect['left'] + 20) <= curr_x <= (rect['left'] + rect['width'] - 20)
+        in_y = (rect['top'] + 20) <= curr_y <= (rect['top'] + rect['height'] - 20)
+        
+        if in_x and in_y:
+            self.log("DEBUG", "鼠标已在KVM画面内，跳过唤醒保持拟人轨迹。")
+            return
+            
+        # 3. 鼠标在画面外，计算随机拉回区间
+        import random
+        margin_x = min(150, max(50, rect['width'] // 4))
+        margin_y = min(150, max(50, rect['height'] // 4))
+        
+        cx = rect['left'] + random.randint(margin_x, rect['width'] - margin_x)
+        cy = rect['top'] + random.randint(margin_y, rect['height'] - margin_y)
+        
+        self.log("DEBUG", f"鼠标越界，正在随机拉回 KVM 区间 ({cx}, {cy})...")
+        
+        # 4. 仅平移鼠标，KVM 会自动捕获焦点
         win32api.SetCursorPos((cx, cy))
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-        time.sleep(0.05)
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-        time.sleep(0.5)
+        time.sleep(0.3)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

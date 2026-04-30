@@ -5,6 +5,16 @@ from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel
 from PyQt6.QtCore import Qt, QTimer, QRect
 from PyQt6.QtGui import QColor, QPen, QPainter
 import pygetwindow as gw
+import ctypes
+
+# [V22.1] 核心像素级修复：强制物理像素感知，禁止逻辑缩放干扰
+try:
+    ctypes.windll.shcore.SetProcessDpiAwareness(2) # PROCESS_PER_MONITOR_DPI_AWARE
+except:
+    try:
+        ctypes.windll.user32.SetProcessDPIAware()
+    except:
+        pass
 
 class VisualDock(QWidget):
     def __init__(self):
