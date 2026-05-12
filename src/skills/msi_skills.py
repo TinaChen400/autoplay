@@ -26,6 +26,7 @@ import src.skills.implementations.humanoid_skills
 import src.skills.implementations.text_skills
 import src.skills.implementations.ai_skills
 import src.skills.implementations.visual_anchor_skills
+import src.modules.local_assistant.skills
 
 class MSISkills(InputSkillsMixin, VisualSkillsMixin, AISkillsMixin, TextSkillsMixin):
     """

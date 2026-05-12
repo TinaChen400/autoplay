@@ -29,9 +29,9 @@ except:
     ctypes.windll.user32.SetProcessDPIAware()
 
 sys.path.append(r"D:\Dev\autoplay")
-from src.utils.window_lock import WindowManager
-from src.utils.hardware_manager import HardwareManager
-from src.execution.task_bridge import TaskBridge
+from src.drivers.window import WindowManager
+from src.drivers.hardware import HardwareManager
+from src.core.bridge import TaskBridge
 
 # --- 子组件：积木卡片 (现在在实心面板中，100% 响应) ---
 class FlowStepCard(QFrame):
@@ -215,6 +215,24 @@ class TaskControlPanel(QWidget):
         
         self.content_layout.addLayout(mission_tools_layout)
         
+        # --- 新增：Quick AI 助手工具栏 (V22.6) ---
+        ai_tools_layout = QHBoxLayout()
+        btn_ai_style = "background: #1a3a5a; color: #00dfff; border: 1px solid #005f7f; border-radius: 4px; font-weight: bold; font-size: 10px;"
+        
+        self.btn_ai_translate = QPushButton("AI 翻译")
+        self.btn_ai_translate.setFixedHeight(28)
+        self.btn_ai_translate.setStyleSheet(btn_ai_style)
+        self.btn_ai_translate.clicked.connect(self.on_ai_translate_clicked)
+        
+        self.btn_ai_advice = QPushButton("AI 建议")
+        self.btn_ai_advice.setFixedHeight(28)
+        self.btn_ai_advice.setStyleSheet(btn_ai_style)
+        self.btn_ai_advice.clicked.connect(self.on_ai_advice_clicked)
+        
+        ai_tools_layout.addWidget(self.btn_ai_translate)
+        ai_tools_layout.addWidget(self.btn_ai_advice)
+        self.content_layout.addLayout(ai_tools_layout)
+        
         # 正确时序：先创建滚动组件，再装入布局
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
@@ -305,6 +323,19 @@ class TaskControlPanel(QWidget):
         if ok and name:
             self.bridge.rename_mission(name)
             self.refresh_mission_data()
+
+    def on_ai_translate_clicked(self):
+        print("[HUD] 触发一键 AI 翻译...")
+        if self.bridge:
+            # 直接通过技能名称运行，无需在任务列表中
+            self.bridge.skills.local_ai_translate()
+            self.refresh_view()
+
+    def on_ai_advice_clicked(self):
+        print("[HUD] 触发一键 AI 建议...")
+        if self.bridge:
+            self.bridge.skills.local_ai_advice()
+            self.refresh_view()
 
     def update_rec_button_style(self):
         if not self.bridge: return
