@@ -35,6 +35,14 @@ class ContextExtractor:
         if img_np is None:
             return ""
 
+        # [V22.7] 视觉存证：保存最后一次 AI 截取的画面，方便用户核对
+        import cv2
+        import os
+        debug_path = r"D:\Dev\autoplay\records\last_ai_capture.jpg"
+        os.makedirs(os.path.dirname(debug_path), exist_ok=True)
+        cv2.imwrite(debug_path, img_np)
+        logger.info(f"AI 视觉存证已保存: {debug_path}")
+
         # 2. 调用核心 OCR 引擎
         ocr = self.vc.get_ocr()
         results = ocr.get_detailed_results(img_np)

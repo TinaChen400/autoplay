@@ -23,10 +23,8 @@ def local_ai_translate(vm: ViewportManager, **kwargs) -> bool:
     if not rect: return False
     
     result = manager.quick_translate(rect)
-    # [V22.5] 将结果存入 ViewportManager，以便 UI 渲染
-    # 假设 vm 有一个可以存储临时状态的地方，或者我们直接通过 log 返回
     print(f"[AI-RESULT] {result}")
-    return True
+    return result 
 
 @skill_handler("local_ai_advice")
 def local_ai_advice(vm: ViewportManager, **kwargs) -> bool:
@@ -39,4 +37,4 @@ def local_ai_advice(vm: ViewportManager, **kwargs) -> bool:
     
     result = manager.quick_advice(rect)
     print(f"[AI-RESULT] {result}")
-    return True
+    return result # 返回字符串，将被 Bridge 捕获

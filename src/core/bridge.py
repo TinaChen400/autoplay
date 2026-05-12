@@ -17,6 +17,7 @@ class TaskStep:
         self.params = params
         self.description = description
         self.status = "idle"
+        self.result_data = "" # [V14.1] 用于存储该步骤产生的 AI 文本结果
 class TaskBridge:
     """
     V14 积木化任务驱动引擎：动态解析 JSON 蓝图并调度原子技能。
@@ -35,6 +36,13 @@ class TaskBridge:
         self.on_visual_feedback_cb = None 
         self._log("TaskBridge 引擎 (V14 Standard) 初始化完毕。")
         self.load_mission()
+
+    @property
+    def all_mission_names(self) -> List[str]:
+        """[V14.1] 返回配置中定义的所有任务名称"""
+        if hasattr(self, 'full_config') and "missions" in self.full_config:
+            return list(self.full_config["missions"].keys())
+        return [self.current_mission_name] if hasattr(self, 'current_mission_name') else []
 
     def _log(self, msg):
         """统一日志记录：支持时间戳与文件持久化"""
@@ -132,7 +140,14 @@ class TaskBridge:
                 self._log(f"[THREAD] 正在进入技能核心: {step.methodName}")
                 method = getattr(self.skills, step.methodName)
                 result = method(**step.params)
-                step.status = "success" if result is not False else "failed"
+                
+                # [V14.2] 智能结果捕获：如果是字符串，直接作为结果数据
+                if isinstance(result, str):
+                    step.result_data = result
+                    step.status = "success"
+                else:
+                    step.status = "success" if result is not False else "failed"
+                
                 self._log(f"[THREAD] 积木执行完成! 结果={step.status}")
             except Exception as e:
                 import traceback

@@ -271,6 +271,13 @@ class TaskControlPanel(QWidget):
         self.btn_test.setStyleSheet("background: #552288; color: white; border-radius: 4px; font-weight: bold; font-size: 10px;")
         
         self.content_layout.addWidget(self.btn_test)
+        
+        # --- 新增：全局 AI 结果显示区 (V22.7) ---
+        self.ai_res_display = QLabel("AI Result: Waiting...")
+        self.ai_res_display.setWordWrap(True)
+        self.ai_res_display.setStyleSheet("color: #00dfff; background: #000; border: 1px solid #005f7f; padding: 5px; font-size: 11px; min-height: 40px;")
+        self.content_layout.addWidget(self.ai_res_display)
+        
         self.content_layout.addLayout(action_layout)
         
         # 将内容容器装入主布局
@@ -327,8 +334,9 @@ class TaskControlPanel(QWidget):
     def on_ai_translate_clicked(self):
         print("[HUD] 触发一键 AI 翻译...")
         if self.bridge:
-            # 直接通过技能名称运行，无需在任务列表中
-            self.bridge.skills.local_ai_translate()
+            res = self.bridge.skills.local_ai_translate()
+            if isinstance(res, str):
+                self.ai_res_display.setText(f"AI: {res}")
             self.refresh_view()
 
     def on_ai_advice_clicked(self):
