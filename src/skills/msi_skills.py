@@ -82,6 +82,10 @@ class MSISkills(InputSkillsMixin, VisualSkillsMixin, AISkillsMixin, TextSkillsMi
         else:
             print(f"[SKILLS] {msg}")
 
+    def _save_dock_rect(self, x, y, w, h):
+        """[V22.8] 核心补丁：接收来自 HUD 的实时物理坐标并同步至 ViewportManager"""
+        self.vm.update_dock_rect({"x": x, "y": y, "width": w, "height": h})
+
     def action_sleep(self, seconds=1.0):
         return self.sleep(seconds)
 

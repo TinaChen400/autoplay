@@ -30,20 +30,26 @@ class ContextExtractor:
                 "height": int(dock_rect["height"])
             }
 
-        # 1. 截取图像
-        img_np = self.vc.capture_region_np(region)
-        if img_np is None:
-            return ""
-
-        # [V22.7] 视觉存证：保存最后一次 AI 截取的画面，方便用户核对
+        # 1. 强制提取区域
+        if not region:
+            logger.warning("ContextExtractor: 未能获取有效的截取区域，使用全屏")
+            
+        # [V22.8] 视觉存证优先级提升：先存图，后 OCR
         import cv2
         import os
         debug_path = r"D:\Dev\autoplay\records\last_ai_capture.jpg"
-        os.makedirs(os.path.dirname(debug_path), exist_ok=True)
-        cv2.imwrite(debug_path, img_np)
-        logger.info(f"AI 视觉存证已保存: {debug_path}")
+        
+        img_np = self.vc.capture_region_np(region)
+        if img_np is not None:
+            os.makedirs(os.path.dirname(debug_path), exist_ok=True)
+            cv2.imwrite(debug_path, img_np)
+            logger.info(f"AI 视觉存证已保存: {debug_path}")
+        else:
+            logger.error("图像采集失败")
+            return ""
 
         # 2. 调用核心 OCR 引擎
+        ocr = self.vc.get_ocr()
         ocr = self.vc.get_ocr()
         results = ocr.get_detailed_results(img_np)
         

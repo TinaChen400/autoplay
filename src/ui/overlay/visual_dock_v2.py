@@ -334,9 +334,15 @@ class TaskControlPanel(QWidget):
     def on_ai_translate_clicked(self):
         print("[HUD] 触发一键 AI 翻译...")
         if self.bridge:
+            self.ai_res_display.setText("AI: 正在截取窗口并翻译...")
+            # 强制刷新一下 UI 线程，让文字显示出来
+            QApplication.processEvents()
+            
             res = self.bridge.skills.local_ai_translate()
             if isinstance(res, str):
                 self.ai_res_display.setText(f"AI: {res}")
+            else:
+                self.ai_res_display.setText("AI: 翻译失败 (请检查对位或 Ollama)")
             self.refresh_view()
 
     def on_ai_advice_clicked(self):
