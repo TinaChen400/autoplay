@@ -132,7 +132,7 @@ def apply_scoring_results(vm: ViewportManager, decisions: dict, **kwargs) -> boo
     return True
 
 @skill_handler("lock_window_position")
-def lock_window_position(vm: ViewportManager, x: int = 10, y: int = 10, width: int = 1440, height: int = 900, **kwargs) -> bool:
+def lock_window_position(vm: ViewportManager, x: int = 15, y: int = 11, width: int = 1790, height: int = 1119, **kwargs) -> bool:
     from src.drivers.window import WindowLock
     locker = WindowLock("Tina")
     success = locker.lock_and_align(x, y, width, height)

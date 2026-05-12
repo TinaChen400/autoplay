@@ -254,6 +254,18 @@ class AIAgentApp:
                 self.bridge.run_mission(callback=lambda: QTimer.singleShot(0, self._update_bridge_status))
                 
             threading.Thread(target=_async_decision_start, daemon=True).start()
+        elif "视觉锚点" in tn or "放大镜" in tn:
+            # [V19.5] 加载视觉锚点测试
+            flow_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config", "panels", "test_landmark_click.json")
+            self.log("SYSTEM", f"正在加载视觉锚点测试: {os.path.basename(flow_path)}")
+            self.bridge.load_mission(custom_path=flow_path)
+            
+            def _async_landmark_start():
+                self.log("SYSTEM", ">>> 启动视觉锚点测试序列...")
+                self._skill_force_activate()
+                self.bridge.run_mission(callback=lambda: QTimer.singleShot(0, self._update_bridge_status))
+                
+            threading.Thread(target=_async_landmark_start, daemon=True).start()
         elif "ocr" in tn or "对位" in tn or "定位" in tn:
             # [V12.1] OCR 专项测试分发
             if "多行" in tn:

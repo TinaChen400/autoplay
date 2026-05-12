@@ -29,19 +29,25 @@ class RecognitionExpert:
                 return None
         return self._paddle
 
-    def find_landmark(self, img_np: np.ndarray, keywords: List[str], engines: List[str] = ["easyocr", "paddleocr"]) -> Optional[Tuple[int, int]]:
+    def find_landmark(self, img_np: np.ndarray, keywords: List[str] = None, landmark_image: str = None, engines: List[str] = ["easyocr", "paddleocr"]) -> Optional[Tuple[int, int]]:
         """
         [V7.65] 异常隔离识别：确保任何引擎报错都不会导致主任务崩溃
         """
+        # 如果提供了 landmark_image，优先强制使用 template 引擎
+        if landmark_image:
+            engines = ["template"] + [e for e in engines if e != "template"]
+
         for engine in engines:
             try:
                 print(f"[EXPERT] Trying engine: {engine}")
                 result = None
                 
-                if engine == "easyocr":
+                if engine == "easyocr" and keywords:
                     result = self._find_via_easyocr(img_np, keywords)
-                elif engine == "paddleocr":
+                elif engine == "paddleocr" and keywords:
                     result = self._find_via_paddleocr(img_np, keywords)
+                elif engine == "template" and landmark_image:
+                    result = self._find_via_template(img_np, landmark_image)
                 
                 if result:
                     print(f"[EXPERT] Match found via {engine}: {result}")
@@ -50,6 +56,44 @@ class RecognitionExpert:
                 print(f"[EXPERT] Engine {engine} runtime error: {e}. Trying next...")
                 continue
                 
+        return None
+
+    def _find_via_template(self, scene_np: np.ndarray, template_name: str) -> Optional[Tuple[int, int]]:
+        """
+        [V19.1] 核心视觉锚点：在场景中搜索指定的图标模板
+        """
+        import os
+        # 寻找路径优先级：records/ (动态录制) -> assets/ (预设)
+        paths = [
+            os.path.join(r"D:\Dev\autoplay\records", template_name),
+            os.path.join(r"D:\Dev\autoplay\assets", template_name)
+        ]
+        
+        tpl_path = None
+        for p in paths:
+            if os.path.exists(p):
+                tpl_path = p; break
+        
+        if not tpl_path:
+            print(f"[EXPERT] Template not found: {template_name}")
+            return None
+
+        template = cv2.imread(tpl_path)
+        if template is None: return None
+        
+        # 模板匹配 (使用归一化相关系数匹配，对亮度变化更鲁棒)
+        res = cv2.matchTemplate(scene_np, template, cv2.TM_CCOEFF_NORMED)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+        
+        # 置信度阈值：0.8 (可根据环境调优)
+        if max_val > 0.8:
+            h, w = template.shape[:2]
+            cx = max_loc[0] + w // 2
+            cy = max_loc[1] + h // 2
+            print(f"[EXPERT] Template match success! Conf: {max_val:.2f} @ ({cx}, {cy})")
+            return (cx, cy)
+        
+        print(f"[EXPERT] Template match failed. Best conf: {max_val:.2f}")
         return None
 
     def _find_via_easyocr(self, img_np: np.ndarray, keywords: List[str]):

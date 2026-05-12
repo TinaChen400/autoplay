@@ -84,14 +84,15 @@ def click_row_target(vm: ViewportManager, keywords: list, target_keyword: str, s
         return re.sub(r'[^a-zA-Z0-9]', '', str(t)).lower()
 
     # 1. 建立数学围栏 (V22.0 核心：全域标题对位)
-    ALL_DIMS = ["overall", "instruction", "idpreservation", "content", "visual", "generated", "absence"]
+    # [V32.5] 增强 ID Preservation 的容错词根：idpreser
+    ALL_DIMS = ["overall", "instruction", "idpreservation", "idpreser", "content", "visual", "generated", "absence"]
     _log("--- [V22.0] 建立全域数学坐标系 ---")
     all_anchors = []
     for bbox, text, prob in results:
         text_clean = clean_text(text)
         is_dim = any(dim_kw in text_clean for dim_kw in ALL_DIMS)
         # [V30.3] 特殊兜底：OCR 可能把 "ID Preservation" 拆成单独的 "ID"，需要专项识别
-        if not is_dim and text_clean in ("id", "idpres"):
+        if not is_dim and text_clean in ("id", "idpres", "idpreser"):
             is_dim = True
         if is_dim and len(text_clean) < 35:
             all_anchors.append({"text": text, "y": (bbox[0][1] + bbox[2][1]) / 2})
@@ -138,18 +139,15 @@ def click_row_target(vm: ViewportManager, keywords: list, target_keyword: str, s
     # 按 X 坐标从左到右排序
     candidates = sorted(candidates, key=lambda c: c["x"])
     _log(f"车道内检测到 {len(candidates)} 个候选按钮。")
-
-    # 5. 计算目标点击坐标
-    # [V32.0 终极方案: 混合定位]
-    # 行的 Y 坐标：依然使用 OCR 检测到的标题 Y，加上微调偏移（如果有识别到按钮就用按钮的Y）
-    # 列的 X 坐标：因为网页是响应式的且窗口大小已锁定在 width=1491，所以 A/B/Good/Bad 的列坐标是绝对固定的！
-    # 直接硬编码 X 列坐标，彻底解决按钮被选中后底色改变导致 OCR 无法识别的问题。
     
+    # 5. 计算目标点击坐标
+    # [V32.6 1790 物理校准版] 
+    # 修正：所有按钮集体右移约 72px，对齐 1790 宽屏下的真实物理中心点
     COLUMN_X = {
-        "responsea": 1249,
-        "responseb": 1341,
-        "bothgood": 1433,
-        "bothbad": 1507
+        "responsea": 1321,
+        "responseb": 1413,
+        "bothgood": 1503,
+        "bothbad": 1577
     }
     
     target_pattern = clean_text(target_keyword)
