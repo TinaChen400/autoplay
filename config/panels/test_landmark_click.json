@@ -1,15 +1,24 @@
 {
-  "panel_name": "OCR 动态偏移点击",
+  "name": "视觉锚点定位测试 (Magnifier Test)",
   "steps": [
     {
-      "id": 1,
-      "name": "【视觉引导】点击 Inputs 区域",
-      "skill": "click_landmark",
-      "action": "click_landmark",
+      "name": "1. 初始化窗口吸附",
+      "action": "lock_window_position",
       "params": {
-        "keywords": ["Inputs", "Input"],
-        "offset_y": 80
-      }
+        "x": 15,
+        "y": 11,
+        "width": 1790,
+        "height": 1119
+      },
+      "description": "确保窗口处于标准 1790px 物理宽度"
+    },
+    {
+      "name": "2. 寻找并点击放大镜",
+      "action": "action_click_smart",
+      "params": {
+        "landmark_image": "zoom_icon.png"
+      },
+      "description": "通过模板匹配寻找 assets 目录下的 zoom_icon.png 并执行点击"
     }
   ]
 }

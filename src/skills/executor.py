@@ -57,6 +57,14 @@ class SkillExecutor:
         
         logger.info(f"--- Starting Panel: {panel_name} ({len(steps)} steps) ---")
         
+        # [V22.5] 核心预检：如果面板名称包含 'Physical' 或 'Humanoid'，强制校验 1790px 宽度
+        if any(kw in panel_name for kw in ["Physical", "Humanoid", "V4"]):
+            rect = self.vm.get_dock_rect()
+            if rect and rect.get("width") != 1790:
+                logger.warning(f"CRITICAL ALIGNMENT WARNING: Current width is {rect.get('width')}, expected 1790px!")
+                logger.warning("Physical coordinate mapping may drift. Please resize window.")
+                # 这里可以选择 return False 或者继续执行，视业务严格程度而定
+        
         for step in steps:
             step_name = step.get("name", f"Step {step.get('id')}")
             skill_id = step.get("skill")
