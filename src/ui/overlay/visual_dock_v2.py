@@ -229,8 +229,20 @@ class TaskControlPanel(QWidget):
         self.btn_ai_advice.setStyleSheet(btn_ai_style)
         self.btn_ai_advice.clicked.connect(self.on_ai_advice_clicked)
         
+        self.btn_lock = QPushButton("LOCK WINDOW")
+        self.btn_lock.setFixedHeight(28)
+        self.btn_lock.setStyleSheet("background: #d44; color: white; border-radius: 4px; font-weight: bold; font-size: 10px;")
+        self.btn_lock.clicked.connect(self.on_lock_clicked)
+        
+        self.btn_ai_clear = QPushButton("CLEAR AI")
+        self.btn_ai_clear.setFixedHeight(28)
+        self.btn_ai_clear.setStyleSheet("background: #444; color: #ccc; border: 1px solid #666; border-radius: 4px; font-weight: bold; font-size: 10px;")
+        self.btn_ai_clear.clicked.connect(self.on_ai_clear_clicked)
+        
         ai_tools_layout.addWidget(self.btn_ai_translate)
         ai_tools_layout.addWidget(self.btn_ai_advice)
+        ai_tools_layout.addWidget(self.btn_ai_clear)
+        ai_tools_layout.addWidget(self.btn_lock)
         self.content_layout.addLayout(ai_tools_layout)
         
         # 正确时序：先创建滚动组件，再装入布局
@@ -272,10 +284,23 @@ class TaskControlPanel(QWidget):
         
         self.content_layout.addWidget(self.btn_test)
         
-        # --- 新增：全局 AI 结果显示区 (V22.7) ---
-        self.ai_res_display = QLabel("AI Result: Waiting...")
-        self.ai_res_display.setWordWrap(True)
-        self.ai_res_display.setStyleSheet("color: #00dfff; background: #000; border: 1px solid #005f7f; padding: 5px; font-size: 11px; min-height: 40px;")
+        # --- 新增：全局 AI 结果显示区 (V22.31 升级为 VSCode 终端风格) ---
+        from PyQt6.QtWidgets import QTextEdit
+        self.ai_res_display = QTextEdit()
+        self.ai_res_display.setReadOnly(True)
+        self.ai_res_display.setPlaceholderText("AI 分析结果将显示在此...")
+        self.ai_res_display.setStyleSheet("""
+            QTextEdit { 
+                color: #e0e0e0; 
+                background: #1e1e1e; 
+                border: 1px solid #3c3c3c; 
+                padding: 12px; 
+                font-family: 'Consolas', 'Cascadia Code', 'Monospace';
+                font-size: 13px; 
+                min-height: 280px;
+                line-height: 1.6;
+            }
+        """)
         self.content_layout.addWidget(self.ai_res_display)
         
         self.content_layout.addLayout(action_layout)
@@ -334,22 +359,31 @@ class TaskControlPanel(QWidget):
     def on_ai_translate_clicked(self):
         print("[HUD] 触发一键 AI 翻译...")
         if self.bridge:
-            self.ai_res_display.setText("AI: 正在截取窗口并翻译...")
+            self.ai_res_display.setPlainText("AI: 正在分析任务要求...")
             # 强制刷新一下 UI 线程，让文字显示出来
             QApplication.processEvents()
             
             res = self.bridge.skills.local_ai_translate()
             if isinstance(res, str):
-                self.ai_res_display.setText(f"AI: {res}")
+                self.ai_res_display.setPlainText(f"AI: {res}")
             else:
-                self.ai_res_display.setText("AI: 翻译失败 (请检查对位或 Ollama)")
+                self.ai_res_display.setPlainText("AI: 翻译失败 (请检查对位或 Ollama)")
             self.refresh_view()
 
     def on_ai_advice_clicked(self):
         print("[HUD] 触发一键 AI 建议...")
         if self.bridge:
-            self.bridge.skills.local_ai_advice()
+            self.ai_res_display.setText("AI: 正在分析任务要求...")
+            QApplication.processEvents()
+            res = self.bridge.skills.local_ai_advice()
+            if isinstance(res, str):
+                self.ai_res_display.setPlainText(res)
             self.refresh_view()
+
+    def on_ai_clear_clicked(self):
+        print("[HUD] 清除 AI 覆盖层...")
+        if self.bridge:
+            self.bridge.skills.clear_ai_overlay()
 
     def update_rec_button_style(self):
         if not self.bridge: return
@@ -375,6 +409,13 @@ class TaskControlPanel(QWidget):
             self.bridge.current_mission_name = m_name
             self.bridge.load_mission(m_name)
             self.rebuild_cards()
+
+    def on_lock_clicked(self):
+        print("[HUD] 触发强制窗口锁定...")
+        if self.bridge:
+            # 这里的 WindowManager 实例在 bridge.skills.wm 中
+            self.bridge.skills.wm.lock_window_position()
+            self.refresh_view()
 
     def refresh_mission_data(self):
         if not self.bridge: return

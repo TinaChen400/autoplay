@@ -28,25 +28,25 @@ class OCRReader:
         if image_np is None:
             return ""
         
+        # [V22.17] 禁用不稳健的 paragraph 模式，回归标准识别以确保对位
         results = self.reader.readtext(image_np)
         
         context_lines = []
         for (bbox, text, prob) in results:
-            if prob < 0.1: continue # 过滤极低置信度 (V27 调优版)
-            
+            if prob < 0.2: continue
             # 计算中心点
             center_x = int(np.mean([p[0] for p in bbox]))
             center_y = int(np.mean([p[1] for p in bbox]))
-            
             context_lines.append(f"文本: '{text}' | 坐标: ({center_x}, {center_y})")
             
         return "\n".join(context_lines)
 
     def get_detailed_results(self, image_np: np.ndarray):
         """
-        返回原始 OCR 结果列表，包含 bbox, text, prob。
+        返回原始 OCR 结果列表 (bbox, text, prob)
         """
         if image_np is None: return []
+        # 强制在 GPU 上运行
         return self.reader.readtext(image_np)
 
     def find_largest_element(self, image_np: np.ndarray, target_text: str):

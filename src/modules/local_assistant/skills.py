@@ -20,11 +20,19 @@ def local_ai_translate(vm: ViewportManager, **kwargs) -> bool:
     """
     manager = get_ai_manager()
     rect = vm.dock_rect
-    if not rect: return False
+    if not rect:
+        # [V22.9] 暴力调试模式：未对位时强制抓取全屏
+        print("[AI-DEBUG] 未发现对位窗口，使用全屏调试模式...")
+        rect = {"x": 0, "y": 0, "width": 1920, "height": 1080}
     
-    result = manager.quick_translate(rect)
+    result = manager.quick_translate_inplace(rect)
     print(f"[AI-RESULT] {result}")
     return result 
+
+@skill_handler("local_ai_clear")
+def local_ai_clear(vm: ViewportManager, **kwargs) -> bool:
+    manager = get_ai_manager()
+    return manager.clear_ai_overlay()
 
 @skill_handler("local_ai_advice")
 def local_ai_advice(vm: ViewportManager, **kwargs) -> bool:

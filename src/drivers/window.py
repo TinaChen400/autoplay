@@ -25,6 +25,10 @@ class WindowManager:
         self.hwnd = None
         self._frozen_rect = None # [V9.7] 绝对冻结坐标缓存
 
+    def lock_window_position(self, x=0, y=0, w=1920, h=1080) -> bool:
+        """[V22.10] 一键标准化对位：强制将窗口移动到指定位置并移除边框"""
+        return self.lock_window_to_size(w, h, x, y)
+
     def lock_window_to_size(self, w: int, h: int, x: int = 10, y: int = 10) -> bool:
         """
         [V6.1] 强力锁定：遍历所有关键字寻找目标，移除边框并强制对齐。

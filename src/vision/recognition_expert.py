@@ -18,14 +18,17 @@ class RecognitionExpert:
     def _get_paddleocr(self):
         if self._paddle is None:
             try:
-                # [V7.64] 极简初始化，强制使用 GPU 并启用 MKLDNN 加速
+                import os
+                # [V7.68] 核心补丁：禁用会导致 4080 报错的新版 PIR 引擎和 oneDNN
+                os.environ["FLAGS_enable_pir_api"] = "0"
+                os.environ["FLAGS_enable_onednn"] = "0"
+                
                 from paddleocr import PaddleOCR
-                import torch
-                use_gpu = torch.cuda.is_available()
-                self._paddle = PaddleOCR(use_angle_cls=True, lang='ch', use_gpu=use_gpu, enable_mkldnn=not use_gpu)
-                print(f"[EXPERT] PaddleOCR 已挂载 (GPU: {use_gpu})")
+                # [V7.69] 终极兼容初始化：移除所有争议参数
+                self._paddle = PaddleOCR(use_angle_cls=True, lang='ch')
+                print("[EXPERT] PaddleOCR 极速模式已挂载")
             except Exception as e:
-                print(f"[EXPERT] PaddleOCR Init Failed: {e}. Falling back to standard engine.")
+                print(f"[EXPERT] PaddleOCR 挂载失败: {e}")
                 return None
         return self._paddle
 
